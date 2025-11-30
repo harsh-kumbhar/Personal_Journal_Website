@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Home — Personal Journal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Dashboard</h1>
+  <div>
+    <form class="d-inline" method="get" action="">
+      <input type="date" name="date" value="{{ selected_date }}" class="form-control d-inline-block" style="width:180px">
+      <button class="btn btn-primary btn-sm">Go</button>
+    </form>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'core:daily_report_today' %}">Generate Report (Today)</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'core:daily_report' selected_date %}">Generate Report (Selected)</a>
+  </div>
+</div>
+
+<div class="row gy-4">
+  <!-- Left column: Quote + Journal -->
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Quote of the Day</div>
+      <div class="card-body quote-card">
+        {% if quote %}
+          <blockquote class="blockquote">
+            <p>{{ quote.text }}</p>
+            {% if quote.author %}<footer class="blockquote-footer">{{ quote.author }}</footer>{% endif %}
+          </blockquote>
+        {% else %}
+          <p>No quotes yet — add one!</p>
+        {% endif %}
+        <!-- Add quote quick form (collapsible) -->
+        <button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#addQuote">+ Add Quote</button>
+        <div id="addQuote" class="collapse mt-2">
+          <form method="post" action="">
+            {% csrf_token %}
+            {{ quote_form.as_p }}
+            <input type="hidden" name="action" value="add_quote">
+            <button class="btn btn-primary btn-sm">Save Quote</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Daily Journal — {{ selected_date }}</div>
+      <div class="card-body">
+        <form method="post" action="">
+          {% csrf_token %}
+          {{ journal_form.as_p }}
+          <input type="hidden" name="action" value="save_journal">
+          <button class="btn btn-success">Save Journal</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: Summaries -->
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Daily Metrics</div>
+      <div class="card-body">
+        <p><strong>Water:</strong> {{ daily_metrics.water_ml|default:"0" }} ml</p>
+        <p><strong>Sleep:</strong> {{ daily_metrics.sleep_hours|default:"-" }} hrs</p>
+        <p><strong>Screen time:</strong> {{ daily_metrics.screen_time_minutes|default:"0" }} mins</p>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Diet — Protein progress</div>
+      <div class="card-body">
+        <p><strong>Total protein today:</strong> {{ total_protein }} g</p>
+        {% if user.settings.daily_protein %}
+          <p>Goal: {{ user.settings.daily_protein }} g</p>
+        {% endif %}
+        <a href="#" class="btn btn-sm btn-outline-primary">Add diet entry</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Workouts / Study</div>
+      <div class="card-body">
+        <h6>Workouts ({{ workouts.count }})</h6>
+        <ul>
+          {% for w in workouts %}
+            <li>{{ w.date }} {% if w.workout_type %} - {{ w.workout_type.name }}{% endif %} {% if w.duration_minutes %} ({{ w.duration_minutes }}m){% endif %}</li>
+          {% empty %}
+            <li>No workouts</li>
+          {% endfor %}
+        </ul>
+
+        <h6>Study sessions ({{ studies.count }})</h6>
+        <ul>
+          {% for s in studies %}
+            <li>{{ s.activity_type }} - {{ s.duration_hours|default:"-" }} hrs</li>
+          {% empty %}
+            <li>No sessions</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+<div class="mt-3">
+  <form method="post" action="">
+    {% csrf_token %}
+    {{ quicknote_form.as_p }}
+    <input type="hidden" name="action" value="quick_note">
+    <button class="btn btn-outline-secondary btn-sm">Add Quick Note</button>
+  </form>
+</div>
+{% endblock %}

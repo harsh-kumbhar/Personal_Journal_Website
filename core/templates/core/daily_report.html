@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Daily Report - {{ selected_date }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h2>Daily Report — {{ selected_date }}</h2>
+    <p><small>Generated at {{ generated_at }}</small></p>
+
+    <h4>Journal</h4>
+    {% if journal %}
+      <p><strong>Moment:</strong> {{ journal.moment_of_day }}</p>
+      <p><strong>Grateful for:</strong> {{ journal.grateful_for }}</p>
+      <p><strong>Regret:</strong> {{ journal.regret }}</p>
+      <p><strong>Highlights:</strong> {{ journal.highlights }}</p>
+    {% else %}
+      <p>No journal entry.</p>
+    {% endif %}
+
+    <h4>Daily Metrics</h4>
+    {% if daily_metrics %}
+      <ul>
+        <li>Water: {{ daily_metrics.water_ml }} ml</li>
+        <li>Sleep: {{ daily_metrics.sleep_hours }} hrs</li>
+        <li>Screen: {{ daily_metrics.screen_time_minutes }} mins</li>
+        <li>Books (minutes): {{ daily_metrics.books_minutes }}</li>
+      </ul>
+    {% else %}
+      <p>No daily metrics recorded.</p>
+    {% endif %}
+
+    <h4>Workouts</h4>
+    {% for w in workouts %}
+      <div>
+        <strong>{{ w.workout_type }}</strong> — {{ w.duration_minutes }} mins
+        <ul>
+          {% for ex in w.exercises.all %}
+            <li>{{ ex.exercise.name }} — {{ ex.sets }} x {{ ex.reps }} {% if ex.weight_kg %} @ {{ ex.weight_kg }}kg{% endif %}</li>
+          {% empty %}
+            <li>No exercises logged.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% empty %}
+      <p>No workouts.</p>
+    {% endfor %}
+
+    <h4>Diet</h4>
+    {% for d in diet_entries %}
+      <div>
+        <strong>{{ d.get_meal_type_display }} @ {{ d.time }}</strong>
+        <ul>
+          {% for it in d.items.all %}
+            <li>{{ it.food.name }} — {{ it.amount }} g — {{ it.protein_calculated|floatformat:2 }} g protein</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% empty %}
+      <p>No diet entries.</p>
+    {% endfor %}
+
+    <h4>Study Sessions</h4>
+    {% for s in studies %}
+      <div>{{ s.activity_type }} — {{ s.duration_hours }} hrs — {{ s.topics.all|join:", " }}</div>
+    {% empty %}
+      <p>No study sessions.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
