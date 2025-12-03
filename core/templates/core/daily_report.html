@@ -1,69 +1,390 @@
 {% extends 'base.html' %}
-{% block title %}Daily Report - {{ selected_date }}{% endblock %}
+{% block title %}Daily Report – {{ selected_date }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* -------------------------------------------------- */
+  /*      A4 PDF PRINT LAYOUT + WARM DARK THEME         */
+  /* -------------------------------------------------- */
+
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  @media print {
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    .print-btn {
+      display: none !important;
+    }
+    .content-section {
+      break-inside: avoid-page;
+    }
+    * {
+      color: black !important;
+      background: white !important;
+    }
+  }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, var(--accent-coral) 0%, var(--accent-golden) 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
+  }
+
+  .report-header h2 { 
+    margin: 0; 
+    font-size: 2.4rem; 
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .report-header small { 
+    font-size: 1rem; 
+    opacity: 0.9; 
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Section Header */
+  .section-header {
+    border-bottom: 3px solid var(--accent-coral);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-header h4 {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .section-header span {
+    font-size: 1.4rem;
+  }
+
+  /* Cards */
+  .content-section {
+    padding: 2rem;
+    border-radius: 16px;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .journal-entry {
+    border-left: 4px solid var(--accent-coral);
+    padding: 1.5rem;
+    background: rgba(255, 111, 97, 0.08);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .journal-entry p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .journal-entry strong {
+    color: var(--accent-golden);
+    font-weight: 600;
+  }
+
+  /* Metrics */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .metric-box {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    transition: all 0.3s ease;
+  }
+
+  .metric-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-color: var(--accent-coral);
+  }
+
+  .metric-box > div:first-child {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-coral);
+    font-family: 'Bebas Neue', sans-serif;
+    margin: 0.5rem 0;
+  }
+
+  .metric-box > div:last-child {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  /* Workouts */
+  .workout-card {
+    border-left: 4px solid var(--accent-golden);
+    padding: 1.5rem;
+    background: rgba(218, 165, 32, 0.08);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .workout-card strong {
+    color: var(--accent-golden);
+    font-size: 1.1rem;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .workout-card ul {
+    margin-top: 1rem;
+    margin-bottom: 0;
+  }
+
+  .workout-card li {
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+  }
+
+  /* Diet */
+  .diet-card {
+    border-left: 4px solid var(--hover-color);
+    padding: 1.5rem;
+    background: rgba(255, 69, 0, 0.08);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .diet-card strong {
+    color: var(--hover-color);
+    font-size: 1.1rem;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .diet-card ul {
+    margin-top: 1rem;
+    margin-bottom: 0;
+  }
+
+  .diet-card li {
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+  }
+
+  /* Study */
+  .study-card {
+    border-left: 4px solid var(--accent-coral);
+    padding: 1.5rem;
+    background: rgba(255, 111, 97, 0.08);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .study-card strong {
+    color: var(--accent-coral);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1rem;
+  }
+
+  .study-card .text-muted {
+    color: var(--text-muted) !important;
+    margin-top: 0.5rem;
+  }
+
+  .study-duration {
+    background: var(--accent-coral);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Empty */
+  .empty-state { 
+    text-align: center; 
+    font-style: italic; 
+    padding: 3rem; 
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Print Button */
+  .print-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-coral) 0%, var(--accent-golden) 100%);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+  }
+
+  .print-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-  <div class="card-body">
-    <h2>Daily Report — {{ selected_date }}</h2>
-    <p><small>Generated at {{ generated_at }}</small></p>
 
-    <h4>Journal</h4>
-    {% if journal %}
-      <p><strong>Moment:</strong> {{ journal.moment_of_day }}</p>
-      <p><strong>Grateful for:</strong> {{ journal.grateful_for }}</p>
-      <p><strong>Regret:</strong> {{ journal.regret }}</p>
-      <p><strong>Highlights:</strong> {{ journal.highlights }}</p>
-    {% else %}
-      <p>No journal entry.</p>
-    {% endif %}
-
-    <h4>Daily Metrics</h4>
-    {% if daily_metrics %}
-      <ul>
-        <li>Water: {{ daily_metrics.water_ml }} ml</li>
-        <li>Sleep: {{ daily_metrics.sleep_hours }} hrs</li>
-        <li>Screen: {{ daily_metrics.screen_time_minutes }} mins</li>
-        <li>Books (minutes): {{ daily_metrics.books_minutes }}</li>
-      </ul>
-    {% else %}
-      <p>No daily metrics recorded.</p>
-    {% endif %}
-
-    <h4>Workouts</h4>
-    {% for w in workouts %}
-      <div>
-        <strong>{{ w.workout_type }}</strong> — {{ w.duration_minutes }} mins
-        <ul>
-          {% for ex in w.exercises.all %}
-            <li>{{ ex.exercise.name }} — {{ ex.sets }} x {{ ex.reps }} {% if ex.weight_kg %} @ {{ ex.weight_kg }}kg{% endif %}</li>
-          {% empty %}
-            <li>No exercises logged.</li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% empty %}
-      <p>No workouts.</p>
-    {% endfor %}
-
-    <h4>Diet</h4>
-    {% for d in diet_entries %}
-      <div>
-        <strong>{{ d.get_meal_type_display }} @ {{ d.time }}</strong>
-        <ul>
-          {% for it in d.items.all %}
-            <li>{{ it.food.name }} — {{ it.amount }} g — {{ it.protein_calculated|floatformat:2 }} g protein</li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% empty %}
-      <p>No diet entries.</p>
-    {% endfor %}
-
-    <h4>Study Sessions</h4>
-    {% for s in studies %}
-      <div>{{ s.activity_type }} — {{ s.duration_hours }} hrs — {{ s.topics.all|join:", " }}</div>
-    {% empty %}
-      <p>No study sessions.</p>
-    {% endfor %}
-  </div>
+<!-- HEADER -->
+<div class="report-header">
+  <h2>Daily Report — {{ selected_date }}</h2>
+  <small>Generated at {{ generated_at }}</small>
 </div>
+
+<!-- JOURNAL ENTRY -->
+<div class="content-section">
+  <div class="section-header">
+    <span>📝</span>
+    <h4>Journal Entry</h4>
+  </div>
+
+  {% if journal %}
+  <div class="journal-entry">
+    <p><strong>✨ Moment:</strong> {{ journal.moment_of_day }}</p>
+    <p><strong>🙏 Grateful for:</strong> {{ journal.grateful_for }}</p>
+    <p><strong>💭 Regret:</strong> {{ journal.regret }}</p>
+    <p><strong>🌟 Highlights:</strong> {{ journal.highlights }}</p>
+  </div>
+  {% else %}
+  <div class="empty-state">No journal entry for this day.</div>
+  {% endif %}
+</div>
+
+<!-- METRICS -->
+<div class="content-section">
+  <div class="section-header">
+    <span>📊</span>
+    <h4>Daily Metrics</h4>
+  </div>
+
+  {% if daily_metrics %}
+  <div class="metrics-grid">
+    <div class="metric-box">
+      <div>💧</div>
+      <div class="metric-value">{{ daily_metrics.water_ml }}</div>
+      <div>Water (ml)</div>
+    </div>
+    <div class="metric-box">
+      <div>😴</div>
+      <div class="metric-value">{{ daily_metrics.sleep_hours }}</div>
+      <div>Sleep (hrs)</div>
+    </div>
+    <div class="metric-box">
+      <div>📱</div>
+      <div class="metric-value">{{ daily_metrics.screen_time_minutes }}</div>
+      <div>Screen Time (min)</div>
+    </div>
+    <div class="metric-box">
+      <div>📚</div>
+      <div class="metric-value">{{ daily_metrics.books_minutes }}</div>
+      <div>Reading (min)</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">No metrics recorded for this day.</div>
+  {% endif %}
+</div>
+
+<!-- WORKOUTS -->
+<div class="content-section">
+  <div class="section-header">
+    <span>💪</span>
+    <h4>Workouts</h4>
+  </div>
+
+  {% for w in workouts %}
+  <div class="workout-card">
+    <strong>{{ w.workout_type }} — {{ w.duration_minutes }} minutes</strong>
+    <ul>
+      {% for ex in w.exercises.all %}
+      <li>{{ ex.exercise.name }} — {{ ex.sets }} x {{ ex.reps }} {% if ex.weight_kg %}@ {{ ex.weight_kg }}kg{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% empty %}
+  <div class="empty-state">No workouts recorded.</div>
+  {% endfor %}
+</div>
+
+<!-- DIET -->
+<div class="content-section">
+  <div class="section-header">
+    <span>🍎</span>
+    <h4>Diet & Nutrition</h4>
+  </div>
+
+  {% for d in diet_entries %}
+  <div class="diet-card">
+    <strong>{{ d.get_meal_type_display }} @ {{ d.time }}</strong>
+    <ul>
+      {% for it in d.items.all %}
+      <li>{{ it.food.name }} — {{ it.amount }}g ({{ it.protein_calculated }}g protein)</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% empty %}
+  <div class="empty-state">No diet data for today.</div>
+  {% endfor %}
+</div>
+
+<!-- STUDY -->
+<div class="content-section">
+  <div class="section-header">
+    <span>📖</span>
+    <h4>Study Sessions</h4>
+  </div>
+
+  {% for s in studies %}
+  <div class="study-card">
+    <div>
+      <strong>{{ s.activity_type }}</strong>
+      <div class="text-muted">{{ s.topics.all|join:", " }}</div>
+    </div>
+    <div class="study-duration">{{ s.duration_hours }} hrs</div>
+  </div>
+  {% empty %}
+  <div class="empty-state">No study sessions.</div>
+  {% endfor %}
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨️</button>
+
 {% endblock %}

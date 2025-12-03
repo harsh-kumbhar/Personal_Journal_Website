@@ -1,114 +1,511 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Home — Personal Journal{% endblock %}
+
+{% block title %}Dashboard — Personal Journal{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* QUOTE SECTION */
+  .quote-hero {
+    position: relative;
+    border-radius: 24px;
+    padding: 3.5rem 2.5rem;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-card);
+    background: var(--card-bg);
+  }
+
+  .quote-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 111, 97, 0.1) 0%, rgba(218, 165, 32, 0.1) 100%);
+    z-index: 1;
+  }
+
+  .quote-content { 
+    position: relative; 
+    z-index: 2; 
+  }
+
+  .quote-text { 
+    font-family: 'Lora', serif; 
+    font-style: italic;
+    font-size: 2.2rem; 
+    font-weight: 500; 
+    line-height: 1.4; 
+    color: var(--text-quote, #ffffff); /* Fallback to white if var missing */
+    margin-bottom: 1rem;
+  }
+
+  .quote-author { 
+    font-size: 1.1rem; 
+    letter-spacing: 1px; 
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  .add-quote-btn { 
+    position: absolute; 
+    bottom: 15px; 
+    right: 15px; 
+    font-family: 'Inter', sans-serif;
+    color: var(--accent-coral); 
+    z-index: 3;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+  }
+
+  .add-quote-btn:hover {
+    color: var(--hover-color);
+    transform: translateY(-1px);
+  }
+
+  /* JOURNAL */
+  .journal-card { 
+    border-radius: 20px; 
+    background: var(--card-bg); 
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+
+  .journal-header { 
+    background: linear-gradient(135deg, var(--accent-coral) 0%, var(--accent-golden) 100%);
+    padding: 1.5rem; 
+  }
+
+  .journal-header h5 { 
+    color: white; 
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+  }
+
+  .journal-input-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .journal-input-group label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  /* --- MODIFIED: REMOVED LINES --- */
+  textarea.fancy-input {
+    width: 100%;
+    min-height: 180px;
+    border: 2px solid var(--border-color);
+    background: var(--card-bg); /* Clean background */
+    line-height: 1.6rem; /* Standard readable line height */
+    font-size: 1.1rem;
+    border-radius: 12px;
+    padding: 1rem;
+    color: var(--text-main); /* Ensures text matches theme */
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+    resize: vertical;
+  }
+
+  textarea.fancy-input:focus {
+    border-color: var(--accent-coral);
+    box-shadow: 0 0 0 0.2rem rgba(255, 111, 97, 0.25);
+    outline: none;
+    background: var(--card-bg);
+    color: var(--text-main);
+  }
+
+  textarea.fancy-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.7; /* Ensures visibility in dark mode */
+  }
+
+  .regular-input { 
+    background: var(--card-bg); 
+    border: 2px solid var(--border-color); 
+    border-radius: 12px; 
+    padding: 1rem; 
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .regular-input:focus { 
+    border-color: var(--accent-coral);
+    box-shadow: 0 0 0 0.2rem rgba(255, 111, 97, 0.25);
+    outline: none;
+    background: var(--card-bg);
+    color: var(--text-main);
+  }
+
+  .regular-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  /* METRICS */
+  .metric-mini-card { 
+    background: var(--card-bg); 
+    border-radius: 16px; 
+    padding: 1.5rem; 
+    text-align: center; 
+    border: 1px solid var(--border-color); 
+    transition: all 0.3s ease;
+  }
+
+  .metric-mini-card:hover { 
+    background: var(--accent-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  .metric-value { 
+    font-size: 2rem; 
+    font-weight: 700; 
+    color: var(--accent-coral);
+    font-family: 'Bebas Neue', sans-serif;
+    margin: 0.5rem 0;
+  }
+
+  .metric-mini-card .fs-4 {
+    font-size: 1.8rem !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-mini-card small {
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* PROTEIN */
+  .progress-custom { 
+    height: 14px; 
+    background: var(--border-color); 
+    border-radius: 20px; 
+    overflow: hidden;
+  }
+
+  .progress-bar-gradient { 
+    background: linear-gradient(90deg, var(--accent-coral) 0%, var(--accent-golden) 100%);
+    transition: width 0.6s ease;
+  }
+
+  /* ACTIVITY FEED */
+  .activity-item { 
+    display: flex; 
+    padding: 1rem 0; 
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+  }
+
+  .activity-item:last-child {
+    border-bottom: none;
+  }
+
+  .activity-icon { 
+    width: 45px; 
+    height: 45px; 
+    border-radius: 50%; 
+    background: var(--accent-soft); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-size: 1.3rem; 
+    color: var(--accent-coral);
+    flex-shrink: 0;
+  }
+
+  .activity-item .ms-3 strong {
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+
+  .activity-item .text-muted {
+    color: var(--text-muted) !important;
+    font-size: 0.9rem;
+  }
+
+  /* STICKY NOTE */
+  .sticky-note { 
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(255, 111, 97, 0.1) 100%);
+    padding: 1.8rem; 
+    border-radius: 16px; 
+    box-shadow: var(--shadow-card);
+    margin-top: 2rem; 
+    border: 1px solid var(--border-color);
+  }
+
+  .sticky-note h6 {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--accent-golden);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .sticky-note textarea {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-main) !important; /* Critical for visibility */
+    font-family: 'Inter', sans-serif;
+    resize: none;
+  }
+
+  .sticky-note textarea::placeholder {
+     color: var(--text-main);
+     opacity: 0.6;
+  }
+
+  .sticky-note textarea:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* --- DATE CONTROL FIXES --- */
+  .date-control-wrapper {
+    background: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .date-control-wrapper input[type="date"] {
+    color: var(--text-main) !important;
+    background: transparent !important;
+    /* This makes the calendar icon white in dark mode */
+    color-scheme: light dark; 
+  }
+
+  .vr {
+    border-color: var(--border-color) !important;
+    opacity: 0.5;
+    background-color: var(--border-color);
+  }
+
+  /* Card Headers */
+  .card h6.text-muted {
+    color: var(--text-muted) !important;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Buttons */
+  .btn-gradient {
+    background: linear-gradient(135deg, var(--accent-coral) 0%, var(--accent-golden) 100%);
+    border: none;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, var(--hover-color) 0%, var(--accent-coral) 100%);
+    color: white;
+  }
+  /* --- FORCE TEXT VISIBILITY (Add this to your CSS) --- */
+
+/* 1. Force the Main "Hello User" Title to be light */
+h1.fw-bold {
+    color: var(--text-main, #ffffff) !important;
+}
+
+/* 2. Fix the "Here's what's happening" text */
+p.text-muted, 
+span.text-muted, 
+small.text-muted, 
+.text-muted {
+    color: var(--text-muted, #a0a0a0) !important; /* Lighter gray for dark mode */
+}
+
+/* 3. Fix Input Text (The text you type) */
+input, textarea, select, .form-control {
+    color: var(--text-main, #ffffff) !important;
+    background-color: transparent !important; /* Prevents white background patches */
+}
+
+/* 4. Fix Placeholder Text (The "Write your thoughts..." text) */
+::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 1 !important; /* Firefox fix */
+}
+
+/* 5. Fix Date Picker Text */
+input[type="date"] {
+    color: var(--text-main, #ffffff) !important;
+    color-scheme: dark; /* Forces calendar icon to be white */
+}
+
+/* 6. Fix "Daily Vitals" and other Card Headers */
+.card h6 {
+    color: var(--text-muted, #b0b0b0) !important;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1>Dashboard</h1>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
   <div>
-    <form class="d-inline" method="get" action="">
-      <input type="date" name="date" value="{{ selected_date }}" class="form-control d-inline-block" style="width:180px">
-      <button class="btn btn-primary btn-sm">Go</button>
+    <h1 class="mb-1 fw-bold">Hello, {{ request.user.username|default:"Journaler" }}! 👋</h1>
+    <p class="text-muted mb-0" style="font-family: 'Inter', sans-serif;">Here's what's happening today.</p>
+  </div>
+
+  <div class="date-control-wrapper d-flex align-items-center p-2 rounded-3 border">
+    <form method="get" action="" class="d-flex align-items-center m-0">
+      <input type="date" name="date" value="{{ selected_date }}" class="form-control border-0 bg-transparent" onchange="this.form.submit()">
     </form>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'core:daily_report_today' %}">Generate Report (Today)</a>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'core:daily_report' selected_date %}">Generate Report (Selected)</a>
+    <div class="vr mx-2"></div>
+    <a href="{% url 'core:daily_report_today' %}" class="btn btn-sm text-white btn-gradient">Today</a>
   </div>
 </div>
 
-<div class="row gy-4">
-  <!-- Left column: Quote + Journal -->
-  <div class="col-lg-6">
-    <div class="card mb-3">
-      <div class="card-header">Quote of the Day</div>
-      <div class="card-body quote-card">
-        {% if quote %}
-          <blockquote class="blockquote">
-            <p>{{ quote.text }}</p>
-            {% if quote.author %}<footer class="blockquote-footer">{{ quote.author }}</footer>{% endif %}
-          </blockquote>
-        {% else %}
-          <p>No quotes yet — add one!</p>
-        {% endif %}
-        <!-- Add quote quick form (collapsible) -->
-        <button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#addQuote">+ Add Quote</button>
-        <div id="addQuote" class="collapse mt-2">
-          <form method="post" action="">
-            {% csrf_token %}
-            {{ quote_form.as_p }}
-            <input type="hidden" name="action" value="add_quote">
-            <button class="btn btn-primary btn-sm">Save Quote</button>
-          </form>
-        </div>
-      </div>
-    </div>
+<!-- QUOTE -->
+<div class="quote-hero">
+  <div class="quote-content text-center">
+    {% if quote %}
+      <div class="quote-text">"{{ quote.text }}"</div>
+      <div class="quote-author">— {{ quote.author|default:"Unknown" }}</div>
+    {% else %}
+      <div class="quote-text">"What you do today can improve all your tomorrows."</div>
+      <div class="quote-author">— Ralph Marston</div>
+    {% endif %}
+  </div>
 
-    <div class="card">
-      <div class="card-header">Daily Journal — {{ selected_date }}</div>
-      <div class="card-body">
-        <form method="post" action="">
+  <button class="btn btn-link add-quote-btn" data-bs-toggle="collapse" data-bs-target="#addQuoteForm">+ Add Quote</button>
+
+  <div id="addQuoteForm" class="collapse mt-3">
+    <div class="card p-3" style="max-width: 420px; margin: 0 auto;">
+      <form method="post">
+        {% csrf_token %}
+        {{ quote_form.as_p }}
+        <input type="hidden" name="action" value="add_quote">
+        <button class="btn btn-sm w-100 text-white btn-gradient">Save Quote</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 align-items-stretch">
+
+  <!-- JOURNAL -->
+  <div class="col-lg-7">
+    <div class="card journal-card">
+      <div class="journal-header">
+        <h5>✍️ Daily Pages</h5>
+      </div>
+      <div class="card-body d-flex flex-column">
+        <form method="post" class="d-flex flex-column h-100">
           {% csrf_token %}
-          {{ journal_form.as_p }}
           <input type="hidden" name="action" value="save_journal">
-          <button class="btn btn-success">Save Journal</button>
+
+          {% for field in journal_form %}
+          <div class="journal-input-group">
+            <label>{{ field.label }}</label>
+
+            {% if field.name == 'entry' or field.widget_type == 'textarea' %}
+              <textarea name="{{ field.name }}" class="fancy-input" placeholder="Write your thoughts here...">{{ field.value|default:'' }}</textarea>
+            {% else %}
+              <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="regular-input" value="{{ field.value|default:'' }}" placeholder="Enter {{ field.label|lower }}...">
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <button class="btn text-white mt-auto py-3 btn-gradient">Save Entry</button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Right column: Summaries -->
-  <div class="col-lg-6">
-    <div class="card mb-3">
-      <div class="card-header">Daily Metrics</div>
-      <div class="card-body">
-        <p><strong>Water:</strong> {{ daily_metrics.water_ml|default:"0" }} ml</p>
-        <p><strong>Sleep:</strong> {{ daily_metrics.sleep_hours|default:"-" }} hrs</p>
-        <p><strong>Screen time:</strong> {{ daily_metrics.screen_time_minutes|default:"0" }} mins</p>
-      </div>
-    </div>
+  <!-- RIGHT SIDE — METRICS -->
+  <div class="col-lg-5">
+    <div class="d-flex flex-column gap-4 h-100">
 
-    <div class="card mb-3">
-      <div class="card-header">Diet — Protein progress</div>
-      <div class="card-body">
-        <p><strong>Total protein today:</strong> {{ total_protein }} g</p>
-        {% if user.settings.daily_protein %}
-          <p>Goal: {{ user.settings.daily_protein }} g</p>
+      <!-- DAILY VITALS -->
+      <div class="card p-3">
+        <h6 class="text-muted fw-bold text-uppercase small mb-3">Daily Vitals</h6>
+        <div class="row g-2">
+          <div class="col-4">
+            <div class="metric-mini-card">
+              <span class="fs-4">💧</span>
+              <div class="metric-value">{{ daily_metrics.water_ml|default:"0" }}</div>
+              <small class="text-muted">ml</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-mini-card">
+              <span class="fs-4">🌙</span>
+              <div class="metric-value">{{ daily_metrics.sleep_hours|default:"-" }}</div>
+              <small class="text-muted">hrs</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-mini-card">
+              <span class="fs-4">📱</span>
+              <div class="metric-value">{{ daily_metrics.screen_time_minutes|default:"-" }}</div>
+              <small class="text-muted">min</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROTEIN CARD -->
+      <div class="card p-3">
+        <h6 class="text-muted fw-bold text-uppercase small mb-3">Protein Intake</h6>
+
+        <div class="mb-2 d-flex justify-content-between">
+          <span class="fw-bold" style="color: var(--accent-coral);">{{ protein_today|default:"0" }}g</span>
+          <span class="text-muted">Goal: {{ protein_goal }}g</span>
+        </div>
+
+        <div class="progress progress-custom">
+          <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: {{ protein_percent }}%;"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="card p-3">
+        <h6 class="text-muted fw-bold text-uppercase small mb-3">Today's Activity</h6>
+
+        {% if activities %}
+          {% for a in activities %}
+          <div class="activity-item">
+            <div class="activity-icon">{{ a.icon }}</div>
+            <div class="ms-3">
+              <strong>{{ a.title }}</strong>
+              <div class="text-muted small">{{ a.time }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted small">No activity logged yet.</p>
         {% endif %}
-        <a href="#" class="btn btn-sm btn-outline-primary">Add diet entry</a>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-header">Workouts / Study</div>
-      <div class="card-body">
-        <h6>Workouts ({{ workouts.count }})</h6>
-        <ul>
-          {% for w in workouts %}
-            <li>{{ w.date }} {% if w.workout_type %} - {{ w.workout_type.name }}{% endif %} {% if w.duration_minutes %} ({{ w.duration_minutes }}m){% endif %}</li>
-          {% empty %}
-            <li>No workouts</li>
-          {% endfor %}
-        </ul>
-
-        <h6>Study sessions ({{ studies.count }})</h6>
-        <ul>
-          {% for s in studies %}
-            <li>{{ s.activity_type }} - {{ s.duration_hours|default:"-" }} hrs</li>
-          {% empty %}
-            <li>No sessions</li>
-          {% endfor %}
-        </ul>
+      <!-- STICKY NOTE -->
+      <div class="sticky-note">
+        <h6 class="fw-bold">Quick Note</h6>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_note">
+          <textarea name="note" class="form-control mt-2" style="height: 100px;" placeholder="Jot down a quick thought...">{{ quick_note|default:"" }}</textarea>
+          <button class="btn btn-sm w-100 mt-2 text-white btn-gradient">Save Note</button>
+        </form>
       </div>
-    </div>
+
+    </div> <!-- END RIGHT COLUMN -->
   </div>
-</div>
 
-<hr>
-<div class="mt-3">
-  <form method="post" action="">
-    {% csrf_token %}
-    {{ quicknote_form.as_p }}
-    <input type="hidden" name="action" value="quick_note">
-    <button class="btn btn-outline-secondary btn-sm">Add Quick Note</button>
-  </form>
-</div>
+</div> <!-- END MAIN ROW -->
+
 {% endblock %}
