@@ -371,7 +371,7 @@ input[type="date"] {
 </div>
 
 <!-- QUOTE -->
-<div class="quote-hero">
+<div class="quote-hero" id="quoteHeroSection">
   <div class="quote-content text-center">
     {% if quote %}
       <div class="quote-text">"{{ quote.text }}"</div>
@@ -382,20 +382,69 @@ input[type="date"] {
     {% endif %}
   </div>
 
-  <button class="btn btn-link add-quote-btn" data-bs-toggle="collapse" data-bs-target="#addQuoteForm">+ Add Quote</button>
+  <button type="button" class="btn btn-link add-quote-btn" onclick="toggleQuoteForm()">
+    + Add Quote
+  </button>
 
-  <div id="addQuoteForm" class="collapse mt-3">
-    <div class="card p-3" style="max-width: 420px; margin: 0 auto;">
+  <div id="addQuoteForm" style="display: none; margin-top: 2rem; position: relative; z-index: 5;">
+    <div class="card p-4" style="max-width: 500px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      
+      <h6 class="text-center mb-3" style="color: var(--text-main); font-weight: bold;">Add a New Quote</h6>
+      
       <form method="post">
         {% csrf_token %}
-        {{ quote_form.as_p }}
         <input type="hidden" name="action" value="add_quote">
-        <button class="btn btn-sm w-100 text-white btn-gradient">Save Quote</button>
+
+        <div class="mb-3">
+            <label style="color: var(--text-muted);">Quote Text</label>
+            {{ quote_form.text }} 
+            </div>
+
+        <div class="mb-3">
+            <label style="color: var(--text-muted);">Author (Optional)</label>
+            {{ quote_form.author }}
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary w-50" onclick="toggleQuoteForm()">Cancel</button>
+            <button type="submit" class="btn text-white w-50 btn-gradient">Save Quote</button>
+        </div>
       </form>
     </div>
   </div>
 </div>
 
+<script>
+  function toggleQuoteForm() {
+    var formDiv = document.getElementById("addQuoteForm");
+    if (formDiv.style.display === "none") {
+      formDiv.style.display = "block";
+      // Scroll to the form so user sees it
+      formDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      formDiv.style.display = "none";
+    }
+  }
+</script>
+
+<style>
+  /* Ensure the form inputs inside the quote card are visible */
+  #addQuoteForm input[type="text"], 
+  #addQuoteForm textarea {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-main) !important;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  #addQuoteForm input:focus, 
+  #addQuoteForm textarea:focus {
+    border-color: var(--accent-coral);
+    outline: none;
+  }
+</style>
 <div class="row g-4 align-items-stretch">
 
   <!-- JOURNAL -->

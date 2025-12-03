@@ -23,10 +23,7 @@ def home_dashboard(request):
 
     # Quote of the day - deterministic rotation by date + user id (if any)
     quote = None
-    quotes_qs = Quote.objects.filter(approved=True).order_by('id')
-    if quotes_qs.exists():
-        idx = (user.id + selected_date.toordinal()) % quotes_qs.count()
-        quote = list(quotes_qs)[idx]
+    quote = Quote.objects.filter(approved=True).order_by('?').first()
 
     # Ensure QuoteDisplayLog recorded for this date (optional)
     try:
