@@ -461,6 +461,45 @@ class HabitLog(models.Model):
     def __str__(self):
         return f"{self.habit.name} on {self.date}"
 
+# core/models.py
+from django.contrib.contenttypes.models import ContentType
+# ... existing imports ...
+
+# Add these models near Habit / HabitLog definitions
+
+class BadHabit(models.Model):
+    """
+    A bad habit definition the user tracks (e.g., 'Late-night snacking', 'Excess screen time').
+    Created once and can be logged per day via BadHabitLog.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bad_habits')
+    name = models.CharField(max_length=200)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'name')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class BadHabitLog(models.Model):
+    """
+    A log entry that links a BadHabit to a specific date (one row per date/habit).
+    """
+    habit = models.ForeignKey(BadHabit, on_delete=models.CASCADE, related_name='logs')
+    date = models.DateField()
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('habit', 'date')
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.habit.name} on {self.date}"
 
 class WaterLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='water_logs')

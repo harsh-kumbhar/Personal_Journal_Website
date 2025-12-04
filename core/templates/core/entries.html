@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entries — Journal{% endblock %}
+
+{% block extra_head %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=Lora:ital,wght@1,400;1,500&family=Montserrat:wght@500;600&display=swap');
+
+  :root {
+    --bg-dark: #181818;
+    --text-main: #F5E8D8;       /* Warm Beige */
+    --text-muted: #B0B0B0;      /* Light Gray */
+    --accent-coral: #FF6F61;
+    --accent-gold: #DAA520;
+    --accent-bad: #FF4545;
+    --border-color: #444;
+    --card-bg: #222;
+    --list-bg: #1F1F1F;
+  }
+
+  /* --- BASE STYLES --- */
+  body {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-main) !important;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Ensure text is colored but backgrounds are transparent to avoid black boxes */
+  p, span, div, li, td, th, label, strong, b, i {
+    color: var(--text-main) !important;
+    background-color: transparent; 
+  }
+
+  /* --- TYPOGRAPHY --- */
+  h1 { 
+    font-family: 'Bebas Neue', sans-serif; 
+    color: var(--accent-coral) !important; 
+    letter-spacing: 2px; 
+    font-size: 3.5rem; 
+  }
+
+  h5, h6, .card-header, label { 
+    font-family: 'Montserrat', sans-serif; 
+    font-weight: 600; 
+    color: var(--accent-gold) !important; 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+  }
+
+  .text-bad { color: var(--accent-bad) !important; }
+  .text-muted, small { color: var(--text-muted) !important; }
+
+  /* --- CARDS & LISTS --- */
+  .card {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    overflow: hidden; 
+  }
+
+  .card-header {
+    background-color: rgba(255,255,255,0.05) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 1rem 1.5rem;
+  }
+
+  .list-group-item {
+    background-color: var(--list-bg) !important;
+    border-color: var(--border-color) !important;
+    padding: 1rem 1.5rem;
+  }
+
+  /* --- INPUTS --- */
+  input, select, textarea {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    padding: 10px 15px;
+    border-radius: 10px;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent-coral) !important;
+    box-shadow: 0 0 0 2px rgba(255,111,97,0.25);
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  ::placeholder {
+    color: rgba(245, 232, 216, 0.4) !important;
+    opacity: 1; 
+  }
+
+  input[type="date"], input[type="time"] {
+    color-scheme: dark; 
+  }
+
+  /* --- BUTTONS --- */
+  .btn-outline-custom {
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    background: transparent !important;
+  }
+  .btn-outline-custom:hover {
+    border-color: var(--accent-gold) !important;
+    color: var(--accent-gold) !important;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, var(--accent-coral), var(--accent-gold));
+    border: none;
+    color: white !important;
+  }
+  
+  .stat-highlight {
+    color: var(--accent-coral) !important;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  /* Toast & Utils */
+  .toast {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--accent-gold) !important;
+    color: var(--text-main) !important;
+  }
+  .btn-close-white { filter: invert(1) brightness(200%) !important; }
+  hr { border-color: var(--border-color); opacity: 0.3; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+  {% if messages %}
+    {% for message in messages %}
+    <div class="toast show align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          {{ message }}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5 gap-3">
+  <div>
+    <h1>Entries & Report</h1>
+    <p class="text-muted" style="font-family: 'Lora', serif; font-style: italic;">"Track your journey, day by day."</p>
+  </div>
+  
+  <form method="get" class="d-flex align-items-center gap-2 p-2 rounded-3" style="border: 1px solid var(--border-color);">
+    <input type="date" name="date" value="{{ selected_date_iso }}" style="width:160px; margin-bottom: 0 !important;">
+    <button class="btn btn-sm btn-gradient px-3">Go</button>
+  </form>
+</div>
+
+<div class="row gy-4">
+  
+  <div class="col-lg-5">
+    
+    <div class="card">
+      <div class="card-header">
+        Daily Metrics — {{ selected_date }}
+      </div>
+      <div class="card-body">
+        <form method="post" action="">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_metrics">
+          
+          {% for field in dm_form %}
+            {% if field.name != 'bad_habits' %}
+              <div class="mb-3">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                  <div class="text-danger small mt-1">{{ field.errors.as_text|linebreaksbr }}</div>
+                {% endif %}
+                {% if field.help_text %}
+                  <small class="text-muted d-block mt-1">{{ field.help_text }}</small>
+                {% endif %}
+                {% if dm_form.non_field_errors %}
+                <div class="text-danger small mt-2">{{ dm_form.non_field_errors }}</div>
+              {% endif %}
+
+              </div>
+            {% endif %}
+          {% endfor %}
+          
+          <button class="btn btn-gradient w-100 py-2">Save Metrics</button>
+        </form>
+      </div>
+    </div>
+
+    
+  </div>
+
+  <div class="col-lg-7">
+    
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Good Habits</span>
+        <button class="btn btn-sm btn-outline-custom" type="button" data-bs-toggle="collapse" data-bs-target="#newHabitForm">+ New</button>
+      </div>
+      
+      <div class="collapse p-3 border-bottom border-secondary" id="newHabitForm">
+        <form method="post" action="" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_habit">
+            <input type="text" name="name" placeholder="E.g. Read 10 pages" required>
+            <button class="btn btn-sm btn-success text-white">Save</button>
+        </form>
+      </div>
+
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for h in habits %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong style="color: var(--text-main);">{{ h.name }}</strong>
+
+              </div>
+              
+              {% if h.id in completed_habit_ids %}
+                <button class="btn btn-sm btn-success disabled" disabled>✓ Done</button>
+              {% else %}
+                <form method="post" action="">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="mark_habit">
+                  <input type="hidden" name="habit" value="{{ h.id }}">
+                  <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                  <button class="btn btn-sm btn-outline-custom">Mark Done</button>
+                </form>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted px-4 py-3">No habits yet. Add one above!</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card mt-4" style="border-color: rgba(255, 69, 69, 0.3) !important;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="text-bad">Bad Habits (Avoid)</span>
+        <button class="btn btn-sm btn-outline-custom" type="button" data-bs-toggle="collapse" data-bs-target="#newBadHabitForm">+ New</button>
+      </div>
+
+      <div class="collapse p-3 border-bottom border-secondary" id="newBadHabitForm">
+        <form method="post" action="" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_bad_habit">
+            <input type="text" name="name" placeholder="E.g. Smoking, Procrastination" required>
+            <button class="btn btn-sm btn-danger text-white">Save</button>
+        </form>
+      </div>
+
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for bh in bad_habits %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+               <strong class="text-bad">{{ bh.name }}</strong>
+            <button class="btn btn-sm btn-outline-danger" type="button"
+        data-bs-toggle="collapse" data-bs-target="#bh-log-{{ bh.id }}"
+        aria-expanded="false" aria-controls="bh-log-{{ bh.id }}">
+  Log Slip-up
+</button>
+
+            </div>
+
+          <div id="bh-log-{{ bh.id }}" class="collapse mt-2 bg-dark p-2 rounded border border-secondary">
+              <form method="post" action="" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_bad_habit">
+                <input type="hidden" name="habit" value="{{ bh.id }}">
+                <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                
+                <input type="text" name="notes" placeholder="Note (optional)">
+                <button class="btn btn-sm btn-danger text-white">Confirm</button>
+              </form>
+            </div>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted px-4 py-3">No bad habits tracked.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      {% if today_bad_logs %}
+      <div class="card-footer border-top border-secondary bg-transparent">
+        <h6 class="small text-muted mb-2">Today's Slip-ups:</h6>
+        <ul class="mb-0 ps-3 small text-white">
+          {% for log in today_bad_logs %}
+            <li>
+              <span class="text-bad">{{ log.habit.name }}</span> 
+              <span class="text-muted">@ {{ log.created_at|default:log.date|date:"H:i" }}</span>
+              {% if log.notes %}— <i>"{{ log.notes }}"</i>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">7-Day Snapshot</div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between text-center">
+                <div>
+                    <div class="stat-highlight">{{ avg_water }}</div>
+                    <small class="text-muted">Avg Water (ml)</small>
+                </div>
+                <div style="border-left: 1px solid var(--border-color);"></div>
+                <div>
+                    <div class="stat-highlight">{{ avg_screen }}</div>
+                    <small class="text-muted">Avg Screen (min)</small>
+                </div>
+                <div style="border-left: 1px solid var(--border-color);"></div>
+                <div>
+                    <div class="stat-highlight">{{ avg_sleep|default:"-" }}</div>
+                    <small class="text-muted">Avg Sleep (hr)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      var toasts = document.querySelectorAll('.toast');
+      toasts.forEach(function (toastNode) {
+          setTimeout(function() {
+             if (typeof bootstrap !== 'undefined' && bootstrap && bootstrap.Toast) {
+                 var toast = new bootstrap.Toast(toastNode);
+                 toast.hide();
+             } else {
+                 // fallback
+                 toastNode.style.display = 'none';
+             }
+          }, 3500);
+      });
+  });
+</script>
+{% endblock %}
+

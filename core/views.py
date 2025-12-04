@@ -132,3 +132,213 @@ def generate_daily_report(request, date=None):
     }
 
     return render(request, 'core/daily_report.html', context)
+
+
+# core/views.py (append / merge)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import date as _date
+from .models import DailyMetrics, WaterLog, Habit, HabitLog, BadHabit, BadHabitLog
+from .forms import DailyMetricsForm, HabitForm, HabitLogForm, BadHabitForm, BadHabitLogForm
+from django.db.models import Avg, Sum, Count
+from django.contrib import messages
+
+@login_required
+def entries_view(request):
+    user = request.user
+    q_date = request.GET.get('date')
+    try:
+        selected_date = timezone.datetime.strptime(q_date, '%Y-%m-%d').date() if q_date else _date.today()
+    except Exception:
+        selected_date = _date.today()
+
+    # Ensure DailyMetrics exists for the date
+    daily_metrics, _ = DailyMetrics.objects.get_or_create(user=user, date=selected_date)
+
+    # forms (keep DM and habit forms for editor use)
+    dm_form = DailyMetricsForm(instance=daily_metrics)
+    habit_form = HabitForm()
+    habitlog_form = HabitLogForm(initial={'date': selected_date})
+    badhabit_form = BadHabitForm()
+    badhabitlog_form = BadHabitLogForm(initial={'date': selected_date})
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        # Save daily metrics
+        if action == 'save_metrics':
+            dm_form = DailyMetricsForm(request.POST, instance=daily_metrics)
+            if dm_form.is_valid():
+                obj = dm_form.save(commit=False)
+                obj.user = user
+                obj.save()
+                messages.success(request, "Daily metrics saved.")
+                return redirect(f"{request.path}?date={obj.date.isoformat()}")
+            else:
+                messages.error(request, "Please fix errors in metrics form.")
+
+        # Add a good habit (simple input: name)
+        elif action == 'add_habit':
+            name = request.POST.get('name', '').strip()
+            if not name:
+                messages.error(request, "Please enter a habit name.")
+            else:
+                # avoid duplicates per user
+                bh, created = Habit.objects.get_or_create(user=user, name=name)
+                if created:
+                    messages.success(request, f"Habit '{name}' created.")
+                else:
+                    messages.info(request, f"Habit '{name}' already exists.")
+                return redirect(request.path)
+
+        # Mark good habit done (expects hidden habit id and optional date)
+        elif action == 'mark_habit':
+            habit_id = request.POST.get('habit') or request.POST.get('habit_id')
+            date_str = request.POST.get('date')
+            try:
+                if date_str:
+                    log_date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()
+                else:
+                    log_date = selected_date
+            except Exception:
+                log_date = selected_date
+
+            if not habit_id:
+                messages.error(request, "No habit specified.")
+            else:
+                try:
+                    hobj = Habit.objects.get(id=int(habit_id), user=user)
+                except (Habit.DoesNotExist, ValueError):
+                    messages.error(request, "Invalid habit.")
+                    return redirect(request.path)
+
+                # create HabitLog (avoid duplicate for same date)
+                hl, created = HabitLog.objects.get_or_create(habit=hobj, date=log_date, defaults={'notes': ''})
+                if created:
+                    update_habit_streak(hobj, log_date)
+                    messages.success(request, f"Marked '{hobj.name}' done for {log_date}.")
+                else:
+                    messages.info(request, f"'{hobj.name}' was already marked for {log_date}.")
+                return redirect(f"{request.path}?date={log_date.isoformat()}")
+
+        # Add a bad habit (simple input: name)
+        elif action == 'add_bad_habit':
+            name = request.POST.get('name', '').strip()
+            if not name:
+                messages.error(request, "Please enter a bad habit name.")
+            else:
+                bh, created = BadHabit.objects.get_or_create(user=user, name=name)
+                if created:
+                    messages.success(request, f"Bad habit '{name}' added.")
+                else:
+                    messages.info(request, f"Bad habit '{name}' already exists.")
+                return redirect(request.path)
+
+        # Mark bad habit (log a slip-up). Accepts 'habit' or 'habit_id', 'date' optional, 'notes' optional.
+        elif action == 'mark_bad_habit':
+            habit_id = request.POST.get('habit') or request.POST.get('habit_id')
+            notes = request.POST.get('notes', '').strip()
+            date_str = request.POST.get('date')
+            try:
+                if date_str:
+                    log_date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()
+                else:
+                    log_date = selected_date
+            except Exception:
+                log_date = selected_date
+
+            if not habit_id:
+                messages.error(request, "No bad habit specified.")
+            else:
+                try:
+                    bh_obj = BadHabit.objects.get(id=int(habit_id), user=user)
+                except (BadHabit.DoesNotExist, ValueError):
+                    messages.error(request, "Invalid bad habit.")
+                    return redirect(request.path)
+
+                bhl, created = BadHabitLog.objects.get_or_create(habit=bh_obj, date=log_date, defaults={'notes': notes})
+                if created:
+                    # if notes provided and model supports it, save (get_or_create set notes in defaults)
+                    messages.success(request, f"Logged bad habit '{bh_obj.name}' for {log_date}.")
+                else:
+                    # if already exists but notes provided and empty, update
+                    if notes and not bhl.notes:
+                        bhl.notes = notes
+                        bhl.save()
+                        messages.success(request, "Slip-up updated with notes.")
+                    else:
+                        messages.info(request, f"'{bh_obj.name}' already logged for {log_date}.")
+                return redirect(f"{request.path}?date={log_date.isoformat()}")
+
+    # Summary data (last 7 days)
+    from datetime import timedelta
+    start_7 = selected_date - timedelta(days=6)
+    metrics_7 = DailyMetrics.objects.filter(user=user, date__range=(start_7, selected_date)).order_by('-date')
+    avg_water = metrics_7.aggregate(avg_water=Avg('water_ml'))['avg_water'] or 0
+    avg_screen = metrics_7.aggregate(avg_screen=Avg('screen_time_minutes'))['avg_screen'] or 0
+    avg_sleep = metrics_7.aggregate(avg_sleep=Avg('sleep_hours'))['avg_sleep'] or 0
+
+    # habits & bad habits
+    habits = Habit.objects.filter(user=user).order_by('-created_at')
+    bad_habits = BadHabit.objects.filter(user=user).order_by('-created_at')
+    today_habit_logs = HabitLog.objects.filter(habit__user=user, date=selected_date)
+    today_bad_logs = BadHabitLog.objects.filter(habit__user=user, date=selected_date)
+
+    # new context helpers
+    completed_habit_ids = list(today_habit_logs.values_list('habit_id', flat=True))
+    selected_date_iso = selected_date.isoformat()
+
+    context = {
+        'selected_date': selected_date,
+        'selected_date_iso': selected_date_iso,
+        'dm_form': dm_form,
+        'habit_form': habit_form,
+        'habitlog_form': habitlog_form,
+        'badhabit_form': badhabit_form,
+        'badhabitlog_form': badhabitlog_form,
+        'metrics_7': metrics_7,
+        'avg_water': int(avg_water),
+        'avg_screen': int(avg_screen),
+        'avg_sleep': round(avg_sleep, 1) if avg_sleep else None,
+        'habits': habits,
+        'bad_habits': bad_habits,
+        'today_habit_logs': today_habit_logs,
+        'today_bad_logs': today_bad_logs,
+        'completed_habit_ids': completed_habit_ids,
+    }
+
+    return render(request, 'core/entries.html', context)
+def update_habit_streak(habit, done_date):
+    """
+    Basic streak updater used when a habit is marked done for a date.
+    Rules:
+      - If last_done_date == done_date: do nothing (already logged).
+      - If last_done_date == done_date - 1 day: increment current_streak.
+      - Otherwise reset current_streak to 1.
+      - Update best_streak if current_streak exceeds it.
+    """
+    try:
+        from datetime import timedelta
+        # handle None defaults safely
+        last = habit.last_done_date
+        if last == done_date:
+            return  # already counted for this date
+
+        if last:
+            yesterday = done_date - timedelta(days=1)
+            if last == yesterday:
+                habit.current_streak = (habit.current_streak or 0) + 1
+            else:
+                habit.current_streak = 1
+        else:
+            habit.current_streak = 1
+
+        habit.last_done_date = done_date
+        if (habit.current_streak or 0) > (habit.best_streak or 0):
+            habit.best_streak = habit.current_streak
+
+        habit.save(update_fields=['current_streak', 'best_streak', 'last_done_date'])
+    except Exception as e:
+        # don't crash the whole view for a streak calculation error — log to console for now
+        import logging
+        logging.exception("Failed to update habit streak: %s", e)
