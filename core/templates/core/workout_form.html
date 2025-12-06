@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Force visibility fixes for Dark Mode */
+    .form-control, .form-select, input, textarea {
+        background-color: #222 !important;
+        color: #F5E8D8 !important;
+        border: 1px solid #444 !important;
+    }
+    .form-control::placeholder {
+        color: #666 !important;
+        font-style: italic;
+    }
+    .form-control:focus {
+        border-color: var(--accent-golden) !important;
+        box-shadow: 0 0 0 0.25rem rgba(218, 165, 32, 0.25) !important;
+    }
+    label {
+        color: var(--text-muted) !important;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    .input-group-text {
+        background-color: #333;
+        color: var(--accent-coral);
+        border: 1px solid #444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <h1 class="mb-0">{{ title }}</h1>
+            <div class="text-end d-none d-md-block">
+                <p class="mb-0 fst-italic" style="color: var(--accent-golden); font-family: 'Lora', serif;">
+                    "Slow progress is still progress. Keep grinding." 🐢🔥
+                </p>
+            </div>
+        </div>
+
+        <form method="post" id="workoutForm">
+            {% csrf_token %}
+            
+            <div class="card p-4 mb-4" style="background: var(--card-bg);">
+                <h4 class="mb-4" style="color: var(--accent-coral);"><i class="bi bi-sliders"></i> Session Setup</h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label>📅 Date</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>⏰ Start Time</label>
+                        {{ form.start_time }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>🏁 End Time</label>
+                        {{ form.end_time }}
+                    </div>
+                    <div class="col-md-6">
+                        <label>🎯 Focus / Type</label>
+                        {{ form.workout_type }}
+                    </div>
+                    <div class="col-md-6">
+                        <label>🔒 Privacy</label>
+                        {{ form.privacy }}
+                    </div>
+                    <div class="col-12">
+                        <label>📝 How did it feel?</label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4" style="background: var(--card-bg);">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 style="color: var(--accent-golden);"><i class="bi bi-dumbbell"></i> The Work</h4>
+                    <button type="button" class="btn btn-sm" id="add-exercise-btn" style="background: #333; color: white; border: 1px solid #555;">
+                        + Add Set
+                    </button>
+                </div>
+
+                {{ formset.management_form }}
+
+                <datalist id="exercises-list">
+                    {% for name in all_exercises %}
+                        <option value="{{ name }}">
+                    {% endfor %}
+                </datalist>
+
+                <div id="exercise-form-container">
+                    {% for subform in formset %}
+                    <div class="exercise-row mb-4 p-3 rounded position-relative" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent-coral);">
+                        {% for hidden in subform.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label>🏋️‍♀️ Exercise Name</label>
+                                {{ subform.exercise_name }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Sets</label>
+                                {{ subform.sets }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Target</label>
+                                {{ subform.reps }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Done</label>
+                                {{ subform.reps_performed }}
+                            </div>
+                            <div class="col-md-2">
+                                <label>Kg</label>
+                                {{ subform.weight_kg }}
+                            </div>
+                            <div class="col-12 mt-2">
+                                <label>Notes</label>
+                                {{ subform.notes }}
+                            </div>
+                            
+                            <div class="position-absolute top-0 end-0 p-2">
+                                {% if subform.instance.pk %}
+                                    <div class="form-check form-switch">
+                                        {{ subform.DELETE }}
+                                        <label class="form-check-label text-danger small">Remove</label>
+                                    </div>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm text-danger remove-row"><i class="bi bi-trash"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-lg py-3 text-uppercase" style="background-color: var(--accent-coral); color: white; letter-spacing: 2px;">
+                    Save Workout 
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="empty-form" style="display:none;">
+    <div class="exercise-row mb-4 p-3 rounded position-relative" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent-golden);">
+        {{ formset.empty_form.id }}
+        <input type="hidden" name="exercises-__prefix__-order" class="exercise-order">
+        
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label>🏋️‍♀️ Exercise Name</label>
+                {{ formset.empty_form.exercise_name }}
+            </div>
+            <div class="col-md-2">
+                <label>Sets</label>
+                {{ formset.empty_form.sets }}
+            </div>
+            <div class="col-md-2">
+                <label>Target</label>
+                {{ formset.empty_form.reps }}
+            </div>
+            <div class="col-md-2">
+                <label>Done</label>
+                {{ formset.empty_form.reps_performed }}
+            </div>
+            <div class="col-md-2">
+                <label>Kg</label>
+                {{ formset.empty_form.weight_kg }}
+            </div>
+            <div class="col-12 mt-2">
+                <label>Notes</label>
+                {{ formset.empty_form.notes }}
+            </div>
+            <div class="position-absolute top-0 end-0 p-2">
+                <button type="button" class="btn btn-sm text-danger remove-row"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('exercise-form-container');
+        const addButton = document.getElementById('add-exercise-btn');
+        const emptyFormHtml = document.getElementById('empty-form').innerHTML;
+        const totalFormsInput = document.getElementById('id_exercises-TOTAL_FORMS');
+        const form = document.getElementById('workoutForm');
+
+        addButton.addEventListener('click', function() {
+            let count = parseInt(totalFormsInput.value);
+            let newHtml = emptyFormHtml.replace(/__prefix__/g, count);
+            container.insertAdjacentHTML('beforeend', newHtml);
+            totalFormsInput.value = count + 1;
+        });
+
+        container.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-row')) {
+                e.target.closest('.exercise-row').remove();
+            }
+        });
+
+        form.addEventListener('submit', function() {
+            const rows = container.querySelectorAll('.exercise-row');
+            rows.forEach((row, index) => {
+                const orderInput = row.querySelector('.exercise-order');
+                if (orderInput) orderInput.value = index;
+            });
+        });
+    });
+</script>
+{% endblock %}

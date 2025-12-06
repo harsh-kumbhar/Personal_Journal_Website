@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Workout Details{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* --- VISIBILITY FIXES (THE NUCLEAR OPTION) --- */
+    /* Force ALL basic text to be Warm Beige to fight Bootstrap defaults */
+    body, .card, .exercise-strip, p, span, div, h1, h2, h3, h4, h5, h6 {
+        color: #F5E8D8 !important;
+    }
+
+    /* Redefine 'text-muted' to be lighter so it is visible on dark backgrounds */
+    .text-muted {
+        color: #C0B0A0 !important; /* Light Taupe/Beige */
+    }
+
+    /* --- LAYOUT STYLING --- */
+    .exercise-strip {
+        background-color: #2A2A2A; /* Card BG */
+        border: 1px solid #444;
+        transition: transform 0.2s, border-color 0.2s;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .exercise-strip:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-golden);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    /* Left Accent Bar */
+    .exercise-strip::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--accent-coral);
+    }
+
+    /* Specific Typography */
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #B8A898 !important; /* Specific muted color */
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .stat-value {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: #ffffff !important; /* Pure white for numbers to pop */
+    }
+
+    .exercise-name {
+        color: var(--accent-golden) !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    /* Header Row Styling */
+    .grid-header {
+        color: var(--accent-coral) !important;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #444;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'core:workout_list' %}" class="text-decoration-none" style="color: var(--accent-golden) !important; font-weight: 500;">
+        <i class="bi bi-arrow-left"></i> Back to Logs
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-5">
+        <div class="p-4 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #2A2A2A 0%, #1a1a1a 100%); border: 1px solid #444;">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
+                <div>
+                    <h5 class="text-uppercase mb-2" style="color: var(--accent-coral) !important; font-family: 'Bebas Neue'; letter-spacing: 2px;">
+                        {{ session.date|date:"l, F d, Y" }}
+                    </h5>
+                    <h1 class="display-4 fw-bold mb-3" style="color: #ffffff !important;">
+                        {{ session.workout_type.name|default:"Workout Session" }}
+                    </h1>
+                    
+                    {% if session.notes %}
+                        <div class="p-3 rounded" style="background: rgba(218, 165, 32, 0.1); border-left: 3px solid var(--accent-golden);">
+                            <p class="mb-0 fst-italic" style="color: #E0E0E0 !important;">"{{ session.notes }}"</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-5 mt-4 mt-md-0 text-center">
+                    <div>
+                        <h2 class="mb-0" style="color: #ffffff !important;">{{ session.total_volume }}</h2>
+                        <span class="small text-muted text-uppercase tracking-wide">Volume (kg)</span>
+                    </div>
+                    <div>
+                        <h2 class="mb-0" style="color: #ffffff !important;">{{ session.duration_minutes }}</h2>
+                        <span class="small text-muted text-uppercase tracking-wide">Minutes</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-top border-secondary d-flex gap-2">
+                <a href="{% url 'core:workout_update' session.pk %}" class="btn btn-sm btn-outline-light px-3">Edit Details</a>
+                <a href="{% url 'core:workout_delete' session.pk %}" class="btn btn-sm btn-outline-danger px-3">Delete</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <h3 class="mb-4 text-uppercase" style="font-size: 1.1rem; letter-spacing: 2px; color: #B8A898 !important;">
+            Exercise Breakdown
+        </h3>
+        
+        <div class="row px-4 d-none d-md-flex grid-header">
+            <div class="col-md-4">Exercise</div>
+            <div class="col-md-2 text-center">Sets</div>
+            <div class="col-md-2 text-center">Reps (Done)</div>
+            <div class="col-md-2 text-center">Weight</div>
+            <div class="col-md-2 text-end">Notes</div>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+            {% for item in session.exercises.all %}
+            <div class="exercise-strip p-4">
+                <div class="row align-items-center">
+                    
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <span class="exercise-name d-block">{{ item.exercise.name }}</span>
+                        {% if item.reps %}
+                            <span class="badge bg-dark border border-secondary mt-1" style="font-weight: normal; color: #ccc !important;">
+                                Target: {{ item.reps }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-6 col-md-2 text-md-center mb-3 mb-md-0">
+                        <span class="stat-label">Sets</span>
+                        <span class="stat-value">{{ item.sets }}</span>
+                    </div>
+
+                    <div class="col-6 col-md-2 text-md-center mb-3 mb-md-0">
+                        <span class="stat-label">Reps</span>
+                        <span class="stat-value" style="color: var(--accent-coral) !important;">
+                            {{ item.reps_performed|default:"-" }}
+                        </span>
+                    </div>
+
+                    <div class="col-6 col-md-2 text-md-center">
+                        <span class="stat-label">Load (Kg)</span>
+                        <span class="stat-value" style="color: var(--accent-golden) !important;">
+                            {{ item.weight_kg|default:"BW" }}
+                        </span>
+                    </div>
+
+                    <div class="col-6 col-md-2 text-md-end">
+                        {% if item.notes %}
+                            <small class="fst-italic d-block text-truncate" style="color: #ccc !important;" title="{{ item.notes }}">
+                                <i class="bi bi-sticky"></i> {{ item.notes }}
+                            </small>
+                        {% else %}
+                            <span style="color: #555 !important;">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

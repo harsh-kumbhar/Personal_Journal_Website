@@ -83,7 +83,6 @@ class Exercise(models.Model):
     def __str__(self):
         return self.name
 
-
 class WorkoutSession(models.Model):
     """
     A single workout session entry (grouping of exercises performed on a date/time).
@@ -121,25 +120,37 @@ class WorkoutSession(models.Model):
             self.duration_minutes = int(diff.total_seconds() // 60)
         super().save(*args, **kwargs)
 
-    def total_volume(self):
-        # Example aggregate of weight * reps * sets if weight numeric stored as float in exercise items
-        # Implementation depends on WorkoutExercise.weight_kg being numeric; keep simple here:
-        q = self.exercises.aggregate(total=Sum(F('sets') * F('weight_kg'), output_field=models.FloatField()))
-        return q.get('total') or 0.0
+# In core/models.py inside WorkoutSession class:
 
-    def __str__(self):
-        return f"{self.date} - {self.workout_type or 'Workout'}"
+    def total_volume(self):
+        """
+        Calculates Volume = Sets * Reps Performed * Weight (KG)
+        Returns an integer (e.g. 5000) instead of float (5000.0)
+        """
+        q = self.exercises.aggregate(
+            total=Sum(F('sets') * F('reps_performed') * F('weight_kg'), output_field=models.FloatField())
+        )
+        val = q.get('total') or 0.0
+        return int(val)  # <--- Return simple integer here
 
 
 class WorkoutExercise(models.Model):
     """
-    One exercise performed within a WorkoutSession. Reps stored as text for flexibility (ranges/AMRAP).
+    One exercise performed within a WorkoutSession.
+    'reps' is the plan (e.g., '8-12'), 'reps_performed' is the actual number for math.
     """
     workout = models.ForeignKey(WorkoutSession, related_name='exercises', on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.PROTECT)
     order = models.PositiveSmallIntegerField(default=0, help_text='Order in workout')
+    
     sets = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1)])
-    reps = models.CharField(max_length=50, blank=True)
+    
+    # The text field for the "Goal" or "Range" (e.g., "8-12", "AMRAP")
+    reps = models.CharField(max_length=50, blank=True, help_text="Target reps (e.g. '8-12')")
+    
+    # The numeric field for actual volume calculation
+    reps_performed = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Actual number of reps done (for volume calc)")
+    
     weight_kg = models.FloatField(null=True, blank=True, help_text='Numeric weight in KG if applicable')
     rest_seconds = models.PositiveIntegerField(null=True, blank=True)
     tempo = models.CharField(max_length=50, blank=True)
@@ -153,8 +164,7 @@ class WorkoutExercise(models.Model):
 
     def __str__(self):
         return f"{self.exercise.name} ({self.workout.date})"
-
-
+    
 class PRRecord(models.Model):
     """
     Personal record per exercise (keeps track of best observed weight/reps).

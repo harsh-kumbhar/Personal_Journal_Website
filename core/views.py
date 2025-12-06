@@ -342,3 +342,80 @@ def update_habit_streak(habit, done_date):
         # don't crash the whole view for a streak calculation error — log to console for now
         import logging
         logging.exception("Failed to update habit streak: %s", e)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.utils import timezone
+from .models import WorkoutSession, Exercise
+from .forms import WorkoutSessionForm, WorkoutExerciseFormSet
+
+@login_required
+def workout_list(request):
+    sessions = WorkoutSession.objects.filter(user=request.user).order_by('-date')
+    return render(request, 'core/workout_list.html', {'sessions': sessions})
+
+@login_required
+def workout_detail(request, pk):
+    session = get_object_or_404(WorkoutSession, pk=pk, user=request.user)
+    return render(request, 'core/workout_detail.html', {'session': session})
+
+@login_required
+def workout_create(request):
+    if request.method == 'POST':
+        form = WorkoutSessionForm(request.POST)
+        formset = WorkoutExerciseFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                workout = form.save(commit=False)
+                workout.user = request.user
+                workout.save()
+                
+                exercises = formset.save(commit=False)
+                for exercise in exercises:
+                    exercise.workout = workout
+                    exercise.save()
+                for obj in formset.deleted_objects:
+                    obj.delete()
+                return redirect('core:workout_detail', pk=workout.pk)
+    else:
+        form = WorkoutSessionForm(initial={'date': timezone.now().date()})
+        formset = WorkoutExerciseFormSet()
+
+    all_exercises = Exercise.objects.values_list('name', flat=True).order_by('name')
+    return render(request, 'core/workout_form.html', {
+        'form': form, 'formset': formset, 'all_exercises': all_exercises, 'title': 'Record Workout'
+    })
+
+@login_required
+def workout_update(request, pk):
+    workout = get_object_or_404(WorkoutSession, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = WorkoutSessionForm(request.POST, instance=workout)
+        formset = WorkoutExerciseFormSet(request.POST, instance=workout)
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                form.save()
+                exercises = formset.save(commit=False)
+                for exercise in exercises:
+                    exercise.workout = workout
+                    exercise.save()
+                for obj in formset.deleted_objects:
+                    obj.delete()
+                return redirect('core:workout_detail', pk=workout.pk)
+    else:
+        form = WorkoutSessionForm(instance=workout)
+        formset = WorkoutExerciseFormSet(instance=workout)
+
+    all_exercises = Exercise.objects.values_list('name', flat=True).order_by('name')
+    return render(request, 'core/workout_form.html', {
+        'form': form, 'formset': formset, 'all_exercises': all_exercises, 'title': 'Edit Workout'
+    })
+
+@login_required
+def workout_delete(request, pk):
+    workout = get_object_or_404(WorkoutSession, pk=pk, user=request.user)
+    if request.method == 'POST':
+        workout.delete()
+        return redirect('core:workout_list')
+    return render(request, 'core/workout_confirm_delete.html', {'object': workout})
