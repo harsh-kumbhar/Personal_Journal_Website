@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Food Library{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* --- NUCLEAR VISIBILITY --- */
+    body, h1, h2, h3, h4, h5, h6, p, span, div, label, input {
+        color: #F5E8D8 !important;
+    }
+    .text-muted { color: #B8A898 !important; }
+    
+    .form-control {
+        background-color: #2A2A2A !important;
+        border: 1px solid #444 !important;
+        color: #F5E8D8 !important;
+    }
+    .form-control:focus {
+        border-color: var(--accent-golden) !important;
+        box-shadow: 0 0 0 0.2rem rgba(218, 165, 32, 0.25) !important;
+    }
+
+    .food-card {
+        background: linear-gradient(145deg, #2A2A2A, #222);
+        border: 1px solid #333;
+        border-radius: 12px;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .food-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--accent-coral);
+    }
+    
+    .macro-box {
+        background: rgba(0,0,0,0.3);
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+    }
+    .macro-val {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: block;
+    }
+    .macro-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #888 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-5">
+        <div class="card p-4 shadow-lg" style="background: #222; border: 1px solid var(--accent-golden);">
+            <h3 class="mb-4 text-uppercase" style="font-family: 'Bebas Neue'; letter-spacing: 1px; color: var(--accent-golden) !important;">
+                + Add New Item
+            </h3>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="small text-muted text-uppercase">Food Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted text-uppercase">Serving Unit (e.g. 1 cup)</label>
+                    {{ form.serving_size_desc }}
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase">Protein (100g)</label>
+                        {{ form.protein_per_100g }}
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase">Cals (100g)</label>
+                        {{ form.calories_per_100g }}
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase">Carbs</label>
+                        {{ form.carbs_per_100g }}
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase">Fats</label>
+                        {{ form.fat_per_100g }}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn w-100 mt-4 py-2 fw-bold" style="background: var(--accent-golden); color: #1C1C1C !important;">
+                    SAVE TO LIBRARY
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6 mb-0" style="font-family: 'Bebas Neue'; color: var(--accent-coral) !important;">
+                🍎 Food Database
+            </h1>
+            <span class="badge bg-dark border border-secondary">{{ foods.count }} Items</span>
+        </div>
+
+        <input type="text" id="foodSearch" class="form-control mb-4 p-3" placeholder="🔍 Search your foods...">
+
+        <div class="row g-3" id="foodGrid">
+            {% for food in foods %}
+            <div class="col-md-6 food-item" data-name="{{ food.name|lower }}">
+                <div class="food-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="fw-bold mb-0 text-truncate" style="max-width: 70%;" title="{{ food.name }}">{{ food.name }}</h5>
+                        <small class="text-muted">{{ food.serving_size_desc }}</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between gap-2">
+                        <div class="macro-box flex-fill" style="border-bottom: 2px solid var(--accent-coral);">
+                            <span class="macro-val" style="color: var(--accent-coral) !important;">{{ food.protein_int }}g</span>
+                            <span class="macro-label">Prot</span>
+                        </div>
+                        <div class="macro-box flex-fill" style="border-bottom: 2px solid var(--accent-golden);">
+                            <span class="macro-val" style="color: var(--accent-golden) !important;">{{ food.calories_int }}</span>
+                            <span class="macro-label">Cal</span>
+                        </div>
+                        <div class="macro-box flex-fill">
+                            <span class="macro-val">{{ food.carbs_int }}g</span>
+                            <span class="macro-label">Carb</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No foods found. Add one on the left!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('foodSearch').addEventListener('keyup', function(e) {
+        let term = e.target.value.toLowerCase();
+        let items = document.querySelectorAll('.food-item');
+        items.forEach(item => {
+            let name = item.getAttribute('data-name');
+            item.style.display = name.includes(term) ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

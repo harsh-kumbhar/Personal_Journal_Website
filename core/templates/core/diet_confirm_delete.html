@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Meal?{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" style="min-height: 60vh; align-items: center;">
+    <div class="col-md-6">
+        <div class="card p-5 text-center position-relative overflow-hidden" style="background: #2A2A2A; border: 1px solid var(--accent-coral); box-shadow: 0 0 20px rgba(255, 111, 97, 0.1);">
+            
+            <div class="mb-3">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+            </div>
+
+            <h2 class="mb-4 fw-bold" style="font-family: 'Montserrat', sans-serif; color: #F5E8D8 !important;">
+                Delete this Meal?
+            </h2>
+            
+            <p class="mb-4 fs-5" style="color: #F5E8D8 !important;">
+                Are you sure you want to delete the 
+                <span class="fw-bold" style="color: var(--accent-golden);">{{ object.get_meal_type_display }}</span> <br>
+                from <span class="fw-bold">{{ object.date|date:"F d, Y" }}</span>?
+            </p>
+            
+            <div class="alert alert-dark border-0 mb-4" style="background: rgba(0,0,0,0.3); color: #B8A898 !important;">
+                ⚠️ This action cannot be undone.
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'core:diet_detail' object.pk %}" class="btn btn-outline-light px-4 py-2">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger px-4 py-2 fw-bold" style="background-color: var(--accent-coral); border: none;">
+                        Yes, Delete It 🗑️
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

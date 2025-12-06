@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Visibility Enforcement */
+    body, h1, h2, h3, p, span { color: #F5E8D8 !important; }
+    .text-muted { color: #B8A898 !important; }
+    
+    .delete-card {
+        background: #2A2A2A; 
+        border: 1px solid var(--accent-coral); 
+        box-shadow: 0 0 30px rgba(255, 111, 97, 0.15);
+        border-radius: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" style="min-height: 60vh; align-items: center;">
+    <div class="col-md-6">
+        <div class="card p-5 text-center delete-card position-relative overflow-hidden">
+            
+            <div class="mb-4">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 3.5rem; color: var(--accent-coral);"></i>
+            </div>
+
+            <h2 class="mb-3 fw-bold" style="font-family: 'Montserrat', sans-serif;">
+                Delete Item?
+            </h2>
+            
+            <p class="mb-4 fs-5">
+                Are you sure you want to remove this <br>
+                <strong style="color: var(--accent-golden) !important;">{{ type_name }}</strong>?
+            </p>
+            
+            <div class="alert alert-dark border-0 mb-4" style="background: rgba(0,0,0,0.3);">
+                <span class="text-muted small">⚠️ This action cannot be undone.</span>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'core:academics_dashboard' %}" class="btn btn-outline-light px-4 py-2">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger px-4 py-2 fw-bold" style="background-color: var(--accent-coral); border: none; color: #fff !important;">
+                        Yes, Delete It
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

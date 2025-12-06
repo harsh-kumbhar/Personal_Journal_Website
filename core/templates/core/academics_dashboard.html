@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Academics Hub{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* --- NUCLEAR VISIBILITY CSS --- */
+    body, h1, h2, h3, h4, h5, h6, p, span, div, li {
+        color: #F5E8D8 !important;
+    }
+    .text-muted { color: #B8A898 !important; }
+
+    /* Dashboard Cards */
+    .dash-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        transition: transform 0.2s;
+        height: 100%;
+    }
+    .dash-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-golden);
+    }
+
+    /* Action Buttons (Top) */
+    .btn-action {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #444;
+        border-radius: 12px;
+        transition: all 0.2s;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+    .btn-action:hover {
+        background: var(--accent-golden);
+        border-color: var(--accent-golden);
+    }
+    /* Force text dark on hover */
+    .btn-action:hover *, .btn-action:hover span, .btn-action:hover i, .btn-action:hover div, .btn-action:hover small {
+        color: #1C1C1C !important;
+    }
+    .btn-action i { font-size: 1.2rem; }
+
+    /* List Items & Edit Buttons */
+    .list-item-custom {
+        background: transparent;
+        border-bottom: 1px solid #333;
+        padding: 1rem 0;
+        position: relative; /* For positioning controls */
+    }
+    .list-item-custom:last-child { border-bottom: none; }
+
+    /* Small Icon Buttons for Edit/Delete */
+    .icon-btn {
+        color: #666 !important;
+        transition: color 0.2s;
+        font-size: 0.9rem;
+        text-decoration: none;
+        margin-left: 8px;
+    }
+    .icon-btn:hover { color: #fff !important; }
+    .icon-btn.del:hover { color: var(--accent-coral) !important; }
+
+    /* Status Badges */
+    .status-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: #333;
+        color: #aaa !important;
+    }
+    .status-active { background: rgba(218, 165, 32, 0.2); color: var(--accent-golden) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-5 align-items-end">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold" style="color: var(--accent-coral) !important; font-family: 'Bebas Neue'; letter-spacing: 1px;">
+            🎓 Knowledge Hub
+        </h1>
+        <p class="text-muted lead">Track your learning, builds, and internship hours.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="d-inline-flex gap-4 p-3 rounded-4" style="background: rgba(255,255,255,0.03); border: 1px solid #333;">
+            <div class="text-center px-2">
+                <span class="d-block h2 fw-bold mb-0" style="color: var(--accent-golden) !important;">{{ total_study_hours }}</span>
+                <span class="small text-muted text-uppercase">Study Hrs</span>
+            </div>
+            <div class="text-center px-2" style="border-left: 1px solid #444;">
+                <span class="d-block h2 fw-bold mb-0" style="color: var(--accent-coral) !important;">{{ total_internship_hours }}</span>
+                <span class="small text-muted text-uppercase">Work Hrs</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+        <a href="{% url 'core:study_session_create' %}" class="btn-action">
+            <i class="bi bi-book"></i>
+            <div>
+                <span class="d-block fw-bold">Log Study</span>
+                <span class="small text-muted" style="font-size: 0.75rem;">DSA, Reading...</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'core:project_create' %}" class="btn-action">
+            <i class="bi bi-code-slash"></i>
+            <div>
+                <span class="d-block fw-bold">New Project</span>
+                <span class="small text-muted" style="font-size: 0.75rem;">Start building</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'core:course_create' %}" class="btn-action">
+            <i class="bi bi-mortarboard"></i>
+            <div>
+                <span class="d-block fw-bold">Add Course</span>
+                <span class="small text-muted" style="font-size: 0.75rem;">Udemy, Coursera</span>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'core:internship_log_create' %}" class="btn-action">
+            <i class="bi bi-briefcase"></i>
+            <div>
+                <span class="d-block fw-bold">Log Work</span>
+                <span class="small text-muted" style="font-size: 0.75rem;">Internship hours</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card dash-card p-4 mb-4">
+            <h4 class="mb-4 text-uppercase" style="color: var(--accent-golden) !important; font-size: 1rem; letter-spacing: 2px;">
+                Recent Study Sessions
+            </h4>
+            
+            {% if recent_sessions %}
+                <div class="d-flex flex-column">
+                    {% for session in recent_sessions %}
+                    <div class="list-item-custom d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold d-block">{{ session.get_activity_type_display }}</span>
+                            <small class="text-muted">{{ session.date|date:"M d" }} • {{ session.start_time|time:"H:i" }}</small>
+                            {% if session.notes %}
+                                <br><small class="text-muted fst-italic">"{{ session.notes|truncatechars:30 }}"</small>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <span class="badge rounded-pill mb-1" style="background: #333; color: #fff !important; font-weight: normal;">
+                                {{ session.duration_display }} hrs
+                            </span>
+                            <div class="mt-1">
+                                <a href="{% url 'core:study_session_update' session.pk %}" class="icon-btn"><i class="bi bi-pencil-square"></i></a>
+                                <a href="{% url 'core:study_session_delete' session.pk %}" class="icon-btn del"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted text-center py-3">No study sessions logged yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card dash-card p-4">
+            <h4 class="mb-4 text-uppercase" style="color: var(--accent-golden) !important; font-size: 1rem; letter-spacing: 2px;">
+                Active Courses
+            </h4>
+            {% if active_courses %}
+                {% for course in active_courses %}
+                <div class="list-item-custom">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">{{ course.title }}</span>
+                        <div>
+                            <a href="{% url 'core:course_update' course.pk %}" class="icon-btn"><i class="bi bi-pencil-square"></i></a>
+                            <a href="{% url 'core:course_delete' course.pk %}" class="icon-btn del"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                         <span class="small text-muted">{{ course.provider }}</span>
+                         {% if course.url %}
+                            <a href="{{ course.url }}" target="_blank" class="small text-decoration-none" style="color: var(--accent-coral) !important;">
+                                Link &rarr;
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                 <p class="text-muted text-center py-3">No active courses.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card dash-card p-4 mb-4">
+            <h4 class="mb-4 text-uppercase" style="color: var(--accent-coral) !important; font-size: 1rem; letter-spacing: 2px;">
+                Active Projects
+            </h4>
+            
+            {% if active_projects %}
+                {% for project in active_projects %}
+                <div class="list-item-custom">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="mb-0 fw-bold">{{ project.title }}</h5>
+                        <div>
+                            <span class="status-badge status-active">Active</span>
+                            <a href="{% url 'core:project_update' project.pk %}" class="icon-btn"><i class="bi bi-pencil-square"></i></a>
+                            <a href="{% url 'core:project_delete' project.pk %}" class="icon-btn del"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">{{ project.description|truncatechars:60 }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted" style="font-family: monospace;">{{ project.tech_stack }}</small>
+                        {% if project.repo_url %}
+                            <a href="{{ project.repo_url }}" target="_blank" class="text-decoration-none small">
+                                <i class="bi bi-github"></i> Repo
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                 <p class="text-muted text-center py-3">No active projects. Start building!</p>
+            {% endif %}
+        </div>
+
+        <div class="card dash-card p-4">
+             <h4 class="mb-4 text-uppercase" style="color: var(--accent-coral) !important; font-size: 1rem; letter-spacing: 2px;">
+                Internship Log (Recent)
+            </h4>
+            {% if recent_internship %}
+                {% for log in recent_internship %}
+                <div class="list-item-custom">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">{{ log.task_title }}</span>
+                        <div>
+                            <span class="fw-bold me-2" style="color: var(--accent-coral) !important;">{{ log.hours_display }}h</span>
+                             <a href="{% url 'core:internship_log_update' log.pk %}" class="icon-btn"><i class="bi bi-pencil-square"></i></a>
+                             <a href="{% url 'core:internship_log_delete' log.pk %}" class="icon-btn del"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">{{ log.date|date:"M d, Y" }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted text-center py-3">No work logged recently.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

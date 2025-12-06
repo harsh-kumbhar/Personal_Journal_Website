@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Nutrition Log{% endblock %}
+
+{% block extra_head %}
+<style>
+    .list-group-item {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-main) !important;
+    }
+    .text-muted { color: #B8A898 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <h1 class="display-5" style="color: var(--accent-coral) !important; font-family: 'Bebas Neue'; letter-spacing: 2px;">
+        🥗 Nutrition Log
+    </h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'core:food_library' %}" class="btn btn-outline-light">Food Library</a>
+        <a href="{% url 'core:diet_create' %}" class="btn" style="background-color: var(--accent-golden); color: #1C1C1C !important; font-weight: bold;">
+            + Log Meal
+        </a>
+    </div>
+</div>
+
+{% if entries %}
+<div class="list-group gap-3">
+    {% for entry in entries %}
+    <div class="list-group-item p-4 d-flex flex-column flex-md-row justify-content-between align-items-center shadow-sm rounded-4">
+        
+        <div class="d-flex align-items-center mb-3 mb-md-0 col-md-4">
+            <div class="text-center me-4 px-3 py-2 rounded-3" style="background: rgba(255, 111, 97, 0.1); border: 1px solid var(--accent-coral);">
+                <span class="d-block fw-bold" style="font-size: 0.8rem; color: var(--accent-coral) !important; letter-spacing: 1px;">{{ entry.date|date:"M"|upper }}</span>
+                <span class="d-block fw-bold display-6" style="color: #F5E8D8 !important; line-height: 1;">{{ entry.date|date:"d" }}</span>
+            </div>
+            <div>
+                <h4 class="mb-1 fw-bold text-capitalize" style="color: #F5E8D8 !important;">{{ entry.meal_type }}</h4>
+                <div class="small text-muted">
+                    <i class="bi bi-clock me-1"></i> {{ entry.time|time:"H:i" }} 
+                    <span class="mx-1">•</span> {{ entry.items.count }} Items
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3 mb-md-0 col-md-4 text-md-center">
+            <div class="d-inline-flex gap-5">
+                <div class="text-center">
+                    <span class="d-block small text-muted text-uppercase" style="letter-spacing: 1px;">Protein</span>
+                    <span class="fw-bold" style="color: var(--accent-coral) !important; font-size: 1.3rem; font-family: 'Montserrat';">
+                        {{ entry.total_protein }}g
+                    </span>
+                </div>
+                <div class="text-center">
+                    <span class="d-block small text-muted text-uppercase" style="letter-spacing: 1px;">Calories</span>
+                    <span class="fw-bold" style="color: var(--accent-golden) !important; font-size: 1.3rem; font-family: 'Montserrat';">
+                        {{ entry.total_calories }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 text-end">
+            <a href="{% url 'core:diet_detail' entry.pk %}" class="btn btn-sm btn-outline-light rounded-pill px-4 me-2">View</a>
+            <a href="{% url 'core:diet_delete' entry.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="border-color: #555;">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-4"><i class="bi bi-egg-fried" style="font-size: 3rem; color: #333;"></i></div>
+    <p class="lead text-muted">No meals logged yet.</p>
+    <a href="{% url 'core:diet_create' %}" class="btn btn-outline-light mt-3">Log your first meal</a>
+</div>
+{% endif %}
+{% endblock %}

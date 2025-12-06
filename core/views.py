@@ -419,3 +419,285 @@ def workout_delete(request, pk):
         workout.delete()
         return redirect('core:workout_list')
     return render(request, 'core/workout_confirm_delete.html', {'object': workout})
+
+
+# core/views.py
+# ... keep existing imports ...
+from .models import FoodItem, DietEntry, DietItem
+from .forms import FoodItemForm, DietEntryForm, DietItemFormSet
+
+# --- FOOD LIBRARY VIEWS ---
+@login_required
+def food_library(request):
+    """ List all foods and allow adding new ones """
+    foods = FoodItem.objects.all().order_by('name')
+    
+    if request.method == 'POST':
+        form = FoodItemForm(request.POST)
+        if form.is_valid():
+            food = form.save(commit=False)
+            food.created_by = request.user
+            food.save()
+            return redirect('core:food_library')
+    else:
+        form = FoodItemForm()
+        
+    return render(request, 'core/food_library.html', {'foods': foods, 'form': form})
+
+# --- MEAL LOGGING VIEWS ---
+@login_required
+def diet_list(request):
+    """ Show history of meals """
+    entries = DietEntry.objects.filter(user=request.user).order_by('-date', '-time')
+    return render(request, 'core/diet_list.html', {'entries': entries})
+
+@login_required
+def diet_create(request):
+    """ Log a new meal """
+    if request.method == 'POST':
+        form = DietEntryForm(request.POST)
+        formset = DietItemFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                entry = form.save(commit=False)
+                entry.user = request.user
+                entry.save()
+                
+                items = formset.save(commit=False)
+                for item in items:
+                    item.diet_entry = entry
+                    item.save() # Macros are auto-calculated in the model's save() method
+                
+                for obj in formset.deleted_objects:
+                    obj.delete()
+                    
+                return redirect('core:diet_list')
+    else:
+        form = DietEntryForm(initial={'date': timezone.now().date(), 'time': timezone.now().time()})
+        formset = DietItemFormSet()
+
+    # Pass food names for the datalist
+    all_foods = FoodItem.objects.values_list('name', flat=True).order_by('name')
+    
+    return render(request, 'core/diet_form.html', {
+        'form': form, 
+        'formset': formset, 
+        'all_foods': all_foods,
+        'title': 'Log Meal'
+    })
+
+@login_required
+def diet_detail(request, pk):
+    entry = get_object_or_404(DietEntry, pk=pk, user=request.user)
+    return render(request, 'core/diet_detail.html', {'entry': entry})
+
+@login_required
+def diet_delete(request, pk):
+    entry = get_object_or_404(DietEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        entry.delete()
+        return redirect('core:diet_list')
+    return render(request, 'core/diet_confirm_delete.html', {'object': entry})
+
+
+# ... existing imports ...
+from .models import StudySession, Course, Project, InternshipLog
+from .forms import StudySessionForm, CourseForm, ProjectForm, InternshipLogForm
+
+# --- ACADEMICS VIEWS ---
+
+@login_required
+def academics_dashboard(request):
+    """ Main Hub for Academics & Internship """
+    # Get recent data
+    recent_sessions = StudySession.objects.filter(user=request.user).order_by('-date', '-start_time')[:5]
+    active_projects = Project.objects.filter(user=request.user, status='active')
+    active_courses = Course.objects.filter(user=request.user).order_by('-created_at')[:5]
+    recent_internship = InternshipLog.objects.filter(user=request.user).order_by('-date')[:5]
+    
+    # Calculate simple stats (Python side to avoid template math)
+    total_internship_hours = sum(log.hours for log in InternshipLog.objects.filter(user=request.user))
+    total_study_hours = sum((s.duration_hours or 0) for s in StudySession.objects.filter(user=request.user))
+    
+    return render(request, 'core/academics_dashboard.html', {
+        'recent_sessions': recent_sessions,
+        'active_projects': active_projects,
+        'active_courses': active_courses,
+        'recent_internship': recent_internship,
+        'total_internship_hours': round(total_internship_hours, 1),
+        'total_study_hours': round(total_study_hours, 1),
+    })
+
+@login_required
+def study_session_create(request):
+    if request.method == 'POST':
+        form = StudySessionForm(request.POST)
+        if form.is_valid():
+            session = form.save(commit=False)
+            session.user = request.user
+            session.save()
+            # If M2M topics were used in form, we'd need form.save_m2m()
+            return redirect('core:academics_dashboard')
+    else:
+        form = StudySessionForm(initial={'date': timezone.now().date(), 'start_time': timezone.now().time()})
+    
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Log Study Session', 'btn_text': 'Start Session'
+    })
+
+@login_required
+def course_create(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            course = form.save(commit=False)
+            course.user = request.user
+            course.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = CourseForm()
+    
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Add New Course', 'btn_text': 'Save Course'
+    })
+
+@login_required
+def project_create(request):
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.user = request.user
+            project.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = ProjectForm()
+    
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Start New Project', 'btn_text': 'Create Project'
+    })
+
+@login_required
+def internship_log_create(request):
+    if request.method == 'POST':
+        form = InternshipLogForm(request.POST)
+        if form.is_valid():
+            log = form.save(commit=False)
+            log.user = request.user
+            log.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = InternshipLogForm(initial={'date': timezone.now().date()})
+    
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Log Internship Hours', 'btn_text': 'Log Work'
+    })
+
+
+# core/views.py
+
+# ... existing imports ...
+from django.urls import reverse
+
+# --- ACADEMICS: UPDATE & DELETE VIEWS ---
+
+# 1. STUDY SESSION
+@login_required
+def study_session_update(request, pk):
+    obj = get_object_or_404(StudySession, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = StudySessionForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = StudySessionForm(instance=obj)
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Edit Study Session', 'btn_text': 'Update'
+    })
+
+@login_required
+def study_session_delete(request, pk):
+    obj = get_object_or_404(StudySession, pk=pk, user=request.user)
+    if request.method == 'POST':
+        obj.delete()
+        return redirect('core:academics_dashboard')
+    return render(request, 'core/generic_confirm_delete.html', {
+        'object': obj, 'type_name': 'Study Session'
+    })
+
+# 2. COURSE
+@login_required
+def course_update(request, pk):
+    obj = get_object_or_404(Course, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = CourseForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = CourseForm(instance=obj)
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Edit Course', 'btn_text': 'Update'
+    })
+
+@login_required
+def course_delete(request, pk):
+    obj = get_object_or_404(Course, pk=pk, user=request.user)
+    if request.method == 'POST':
+        obj.delete()
+        return redirect('core:academics_dashboard')
+    return render(request, 'core/generic_confirm_delete.html', {
+        'object': obj, 'type_name': f"Course: {obj.title}"
+    })
+
+# 3. PROJECT
+@login_required
+def project_update(request, pk):
+    obj = get_object_or_404(Project, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = ProjectForm(instance=obj)
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Edit Project', 'btn_text': 'Update'
+    })
+
+@login_required
+def project_delete(request, pk):
+    obj = get_object_or_404(Project, pk=pk, user=request.user)
+    if request.method == 'POST':
+        obj.delete()
+        return redirect('core:academics_dashboard')
+    return render(request, 'core/generic_confirm_delete.html', {
+        'object': obj, 'type_name': f"Project: {obj.title}"
+    })
+
+# 4. INTERNSHIP LOG
+@login_required
+def internship_log_update(request, pk):
+    obj = get_object_or_404(InternshipLog, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = InternshipLogForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            return redirect('core:academics_dashboard')
+    else:
+        form = InternshipLogForm(instance=obj)
+    return render(request, 'core/generic_form.html', {
+        'form': form, 'title': 'Edit Work Log', 'btn_text': 'Update'
+    })
+
+@login_required
+def internship_log_delete(request, pk):
+    obj = get_object_or_404(InternshipLog, pk=pk, user=request.user)
+    if request.method == 'POST':
+        obj.delete()
+        return redirect('core:academics_dashboard')
+    return render(request, 'core/generic_confirm_delete.html', {
+        'object': obj, 'type_name': 'Internship Log'
+    })

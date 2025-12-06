@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Details{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Table Styling */
+    .table-custom {
+        color: #F5E8D8 !important;
+        vertical-align: middle;
+    }
+    .table-custom th {
+        color: var(--accent-coral) !important;
+        font-family: 'Montserrat';
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        border-bottom: 1px solid #444;
+    }
+    .table-custom td {
+        border-bottom: 1px solid #333;
+        background: transparent !important;
+        color: #F5E8D8 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'core:diet_list' %}" class="text-decoration-none" style="color: var(--accent-golden) !important;">
+        <i class="bi bi-arrow-left"></i> Back to Log
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-5">
+        <div class="p-4 rounded-4" style="background: linear-gradient(135deg, #2A2A2A 0%, #1a1a1a 100%); border: 1px solid #444;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="text-uppercase mb-2" style="color: var(--accent-coral) !important; font-family: 'Bebas Neue'; letter-spacing: 2px;">
+                        {{ entry.date|date:"l, F d, Y" }}
+                    </h5>
+                    <h1 class="display-4 fw-bold mb-3" style="color: #fff !important;">
+                        {{ entry.get_meal_type_display }}
+                    </h1>
+                    {% if entry.notes %}
+                        <p class="fst-italic text-muted">"{{ entry.notes }}"</p>
+                    {% endif %}
+                </div>
+                <div class="text-end">
+                    <h2 class="mb-0" style="color: var(--accent-coral) !important;">{{ entry.total_protein }}g</h2>
+                    <span class="small text-muted text-uppercase">Protein</span>
+                    
+                    <h2 class="mb-0 mt-3" style="color: var(--accent-golden) !important;">{{ entry.total_calories }}</h2>
+                    <span class="small text-muted text-uppercase">Calories</span>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-top border-secondary">
+                 <a href="{% url 'core:diet_delete' entry.pk %}" class="btn btn-sm btn-outline-danger px-3">Delete Entry</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <h3 class="mb-4 text-uppercase" style="color: #B8A898 !important;">Consumed Items</h3>
+        <div class="card p-4" style="background: var(--card-bg);">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Food</th>
+                        <th class="text-center">Amount</th>
+                        <th class="text-center">Prot (g)</th>
+                        <th class="text-center">Cals</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in entry.items.all %}
+                    <tr>
+                        <td>
+                            <span class="fw-bold fs-5">{{ item.food.name }}</span>
+                            <br><small class="text-muted">{{ item.food.serving_size_desc }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="fs-5">{{ item.amount }}g</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="fs-5 fw-bold" style="color: var(--accent-coral) !important;">
+                                {{ item.protein_int }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="fs-5 fw-bold" style="color: var(--accent-golden) !important;">
+                                {{ item.calories_int }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

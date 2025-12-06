@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Force inputs to dark mode styling */
+    .form-control, .form-select {
+        background-color: #222 !important;
+        color: #F5E8D8 !important;
+        border: 1px solid #444 !important;
+    }
+    .form-control:focus {
+        border-color: var(--accent-coral) !important;
+    }
+    label { color: #B8A898 !important; margin-bottom: 5px; font-size: 0.9rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <h1 class="mb-4" style="color: #F5E8D8 !important;">{{ title }}</h1>
+
+        <form method="post" id="dietForm">
+            {% csrf_token %}
+            
+            <div class="card p-4 mb-4" style="background: var(--card-bg);">
+                <h4 class="mb-4" style="color: var(--accent-coral) !important;">🍽️ Meal Info</h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label>Date</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>Time</label>
+                        {{ form.time }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>Meal Type</label>
+                        {{ form.meal_type }}
+                    </div>
+                    <div class="col-12">
+                        <label>Notes</label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4" style="background: var(--card-bg);">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 style="color: var(--accent-golden) !important;">🥓 Ingredients</h4>
+                    <button type="button" class="btn btn-sm btn-outline-light" id="add-item-btn">
+                        + Add Food
+                    </button>
+                </div>
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
+
+                <datalist id="food-list">
+                    {% for name in all_foods %}
+                        <option value="{{ name }}">
+                    {% endfor %}
+                </datalist>
+
+                {{ formset.management_form }}
+
+                <div id="items-container">
+                    {% for subform in formset %}
+                    <div class="item-row mb-3 p-3 rounded" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent-golden);">
+                        {% for hidden in subform.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-8">
+                                <label>Food Search</label>
+                                {{ subform.food_search }}
+                                {% if subform.food_search.errors %}
+                                    <div class="text-danger small mt-1">{{ subform.food_search.errors }}</div>
+                                {% endif %}
+                                {% if subform.non_field_errors %}
+                                     <div class="text-danger small mt-1">{{ subform.non_field_errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label>Amount (g)</label>
+                                {{ subform.amount }}
+                            </div>
+                            <div class="col-md-1">
+                                {% if subform.instance.pk %}
+                                    <div class="form-check">
+                                        {{ subform.DELETE }}
+                                        <label class="text-danger small">Del</label>
+                                    </div>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm text-danger remove-row"><i class="bi bi-trash"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-lg fw-bold" style="background: var(--accent-coral); color: #fff !important;">
+                    SAVE MEAL
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="empty-form" style="display:none;">
+    <div class="item-row mb-3 p-3 rounded" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent-coral);">
+        {{ formset.empty_form.id }}
+        <div class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label>Food Search</label>
+                {{ formset.empty_form.food_search }}
+            </div>
+            <div class="col-md-3">
+                <label>Amount (g)</label>
+                {{ formset.empty_form.amount }}
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-sm text-danger remove-row"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('items-container');
+        const addButton = document.getElementById('add-item-btn');
+        const emptyFormHtml = document.getElementById('empty-form').innerHTML;
+        const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS'); // Note: 'items' is the related_name or formset prefix
+
+        addButton.addEventListener('click', function() {
+            let count = parseInt(totalFormsInput.value);
+            let newHtml = emptyFormHtml.replace(/__prefix__/g, count);
+            container.insertAdjacentHTML('beforeend', newHtml);
+            totalFormsInput.value = count + 1;
+        });
+
+        container.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-row')) {
+                e.target.closest('.item-row').remove();
+            }
+        });
+    });
+</script>
+{% endblock %}

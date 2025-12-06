@@ -166,7 +166,7 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
                href="{% url 'core:home' %}">Dashboard</a>
         </li>
-
+        
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'entries' %}active{% endif %}" 
                href="{% url 'core:entries' %}">Entries</a>
@@ -177,8 +177,15 @@
                href="{% url 'core:workout_list' %}">Workout</a>
         </li>
         
-        <li class="nav-item"><a class="nav-link" href="#">Nutrition</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Academics</a></li>
+        <li class="nav-item">
+            <a class="nav-link {% if 'diet' in request.resolver_match.url_name or 'food' in request.resolver_match.url_name %}active{% endif %}" 
+            href="{% url 'core:diet_list' %}">Nutrition</a>
+        </li>
+        
+        <li class="nav-item">
+            <a class="nav-link {% if 'academics' in request.resolver_match.url_name or 'study' in request.resolver_match.url_name or 'project' in request.resolver_match.url_name %}active{% endif %}" 
+            href="{% url 'core:academics_dashboard' %}">Academics</a>
+        </li>
     </ul>
 </nav>
 

@@ -189,11 +189,12 @@ class PRRecord(models.Model):
 # -------------------------
 # Diet / Nutrition Models
 # -------------------------
+# core/models.py
+
+# ... imports ...
+
 class FoodItem(models.Model):
-    """
-    Canonical food / ingredient with macros per 100g (or per standard serving).
-    Keep created_by so users can add custom items.
-    """
+    # ... existing fields ...
     name = models.CharField(max_length=200)
     serving_size_desc = models.CharField(max_length=100, blank=True, help_text="e.g., '100g', '1 cup'")
     protein_per_100g = models.FloatField(default=0.0, validators=[MinValueValidator(0.0)])
@@ -209,14 +210,29 @@ class FoodItem(models.Model):
         unique_together = ('name', 'serving_size_desc')
         ordering = ['name']
 
+    # --- NEW PROPERTIES TO FIX FLOATING POINT ISSUE ---
+    @property
+    def protein_int(self):
+        return int(self.protein_per_100g or 0)
+    
+    @property
+    def calories_int(self):
+        return int(self.calories_per_100g or 0)
+        
+    @property
+    def carbs_int(self):
+        return int(self.carbs_per_100g or 0)
+    
+    @property
+    def fat_int(self):
+        return int(self.fat_per_100g or 0)
+
     def __str__(self):
         return self.name
 
 
 class DietEntry(models.Model):
-    """
-    A meal or food entry grouped by date/time. Each DietEntry can have multiple DietItem rows.
-    """
+    # ... existing fields ...
     MEAL_CHOICES = (
         ('breakfast','Breakfast'),
         ('lunch','Lunch'),
@@ -237,21 +253,21 @@ class DietEntry(models.Model):
             models.Index(fields=['user', 'date']),
         ]
 
+    # --- UPDATED METHODS TO RETURN INTEGERS DIRECTLY ---
     def total_protein(self):
-        return self.items.aggregate(total=Sum('protein_calculated'))['total'] or 0.0
+        val = self.items.aggregate(total=Sum('protein_calculated'))['total'] or 0.0
+        return int(val)
 
     def total_calories(self):
-        return self.items.aggregate(total=Sum('calories_calculated'))['total'] or 0.0
+        val = self.items.aggregate(total=Sum('calories_calculated'))['total'] or 0.0
+        return int(val)
 
     def __str__(self):
         return f"{self.date} {self.meal_type}"
 
 
 class DietItem(models.Model):
-    """
-    A line item inside a DietEntry referencing a FoodItem and an amount.
-    amount is interpreted as grams unless unit changes are used; protein_calculated stores value to speed reporting.
-    """
+    # ... existing fields ...
     diet_entry = models.ForeignKey(DietEntry, related_name='items', on_delete=models.CASCADE)
     food = models.ForeignKey(FoodItem, on_delete=models.PROTECT)
     amount = models.FloatField(validators=[MinValueValidator(0.0)], help_text="in grams (standardize in UI)")
@@ -272,9 +288,17 @@ class DietItem(models.Model):
                 self.calories_calculated = (self.food.calories_per_100g * self.amount) / 100.0
         super().save(*args, **kwargs)
 
+    # --- NEW PROPERTIES FOR INTEGER DISPLAY ---
+    @property
+    def protein_int(self):
+        return int(self.protein_calculated or 0)
+    
+    @property
+    def calories_int(self):
+        return int(self.calories_calculated or 0)
+
     def __str__(self):
         return f"{self.amount}g {self.food.name}"
-
 
 class NutritionGoal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -308,6 +332,8 @@ class MealTemplateItem(models.Model):
     order = models.PositiveSmallIntegerField(default=0)
 
 
+# ... (Previous imports: User, models, timezone, etc.) ...
+
 # -------------------------
 # Academics / Internship Models
 # -------------------------
@@ -331,6 +357,12 @@ class Course(models.Model):
     class Meta:
         unique_together = ('user', 'title')
         ordering = ['-created_at']
+    
+    @property
+    def hours_display(self):
+        """Returns formatted string to avoid template filters"""
+        val = self.hours_estimated or 0
+        return f"{val:.1f}".rstrip('0').rstrip('.')
 
     def __str__(self):
         return self.title
@@ -377,7 +409,7 @@ class StudySession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-date']
+        ordering = ['-date', '-start_time']
         indexes = [
             models.Index(fields=['user', 'date']),
         ]
@@ -390,8 +422,16 @@ class StudySession(models.Model):
             if end_dt < start_dt:
                 end_dt += timezone.timedelta(days=1)
             diff = end_dt - start_dt
+            # Calculate hours
             self.duration_hours = round(diff.total_seconds() / 3600.0, 2)
         super().save(*args, **kwargs)
+
+    @property
+    def duration_display(self):
+        """Returns formatted string (e.g., '2.5') for templates"""
+        val = self.duration_hours or 0.0
+        # Format to 1 decimal place, remove trailing zero (2.0 -> 2, 2.5 -> 2.5)
+        return f"{val:.2f}".rstrip('0').rstrip('.')
 
     def __str__(self):
         return f"{self.date} - {self.activity_type}"
@@ -410,10 +450,15 @@ class InternshipLog(models.Model):
 
     class Meta:
         ordering = ['-date']
+        
+    @property
+    def hours_display(self):
+        """Returns formatted string to avoid template filters"""
+        val = self.hours or 0
+        return f"{val:.1f}".rstrip('0').rstrip('.')
 
     def __str__(self):
         return f"{self.date} - {self.task_title}"
-
 
 # -------------------------
 # General metrics & Habits

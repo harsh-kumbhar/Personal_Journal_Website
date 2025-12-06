@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Force inputs to dark mode styling */
+    .form-control, .form-select, textarea {
+        background-color: #222 !important;
+        color: #F5E8D8 !important;
+        border: 1px solid #444 !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--accent-golden) !important;
+        box-shadow: 0 0 0 0.2rem rgba(218, 165, 32, 0.25) !important;
+    }
+    label {
+        color: #B8A898 !important; /* Muted Beige Labels */
+        font-weight: 500;
+        margin-bottom: 5px;
+        margin-top: 10px;
+    }
+    /* Hide the 'Help text' if it makes UI messy, or style it */
+    .helptext {
+        font-size: 0.75rem;
+        color: #666 !important;
+        display: block;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        
+        <div class="mb-4 text-center">
+            <a href="{% url 'core:academics_dashboard' %}" class="text-decoration-none small text-uppercase" style="color: var(--accent-golden) !important; letter-spacing: 1px;">
+                &larr; Back to Dashboard
+            </a>
+            <h1 class="mt-2" style="color: #F5E8D8 !important;">{{ title }}</h1>
+        </div>
+
+        <div class="card p-5 shadow-lg" style="background-color: var(--card-bg); border: 1px solid #333; border-radius: 16px;">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="helptext">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-lg fw-bold" style="background: var(--accent-coral); color: white !important;">
+                        {{ btn_text|default:"Save" }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
