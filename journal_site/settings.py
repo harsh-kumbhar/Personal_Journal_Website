@@ -75,7 +75,6 @@ WSGI_APPLICATION = "journal_site.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 import dj_database_url
-import os
 
 # Replace your old DATABASES section with this:
 DATABASES = {
@@ -116,15 +115,21 @@ USE_I18N = True
 USE_TZ = True
 
 
+# settings.py
+
+# ... (Ensure 'import os' is at the top of the file) ...
+
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# Add/Ensure these are at the bottom
 STATIC_URL = 'static/'
-if not DEBUG:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Tell Django where to collect static files (ALWAYS required for deployment)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Enable WhiteNoise storage for production
+# This compresses files and caches them forever
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
