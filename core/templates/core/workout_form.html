@@ -187,15 +187,45 @@
         </div>
     </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Elements
         const container = document.getElementById('exercise-form-container');
         const addButton = document.getElementById('add-exercise-btn');
         const emptyFormHtml = document.getElementById('empty-form').innerHTML;
         const totalFormsInput = document.getElementById('id_exercises-TOTAL_FORMS');
         const form = document.getElementById('workoutForm');
+        
+        // NEW: Workout Type Dropdown & Datalist
+        const typeSelect = document.getElementById('id_workout_type');
+        const dataList = document.getElementById('exercises-list');
 
+        // --- 1. SMART FILTER LOGIC ---
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function() {
+                const typeId = this.value;
+                if (!typeId) return; // Do nothing if empty
+
+                // Fetch filtered exercises
+                fetch(`{% url 'core:get_exercises_by_type' %}?type_id=${typeId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear current options
+                        dataList.innerHTML = '';
+                        
+                        // Add new filtered options
+                        data.exercises.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.name;
+                            dataList.appendChild(option);
+                        });
+                        console.log(`Updated list with ${data.exercises.length} exercises.`);
+                    })
+                    .catch(err => console.error('Error fetching exercises:', err));
+            });
+        }
+
+        // --- 2. EXISTING FORMSET LOGIC ---
         addButton.addEventListener('click', function() {
             let count = parseInt(totalFormsInput.value);
             let newHtml = emptyFormHtml.replace(/__prefix__/g, count);

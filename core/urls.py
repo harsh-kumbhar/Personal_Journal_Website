@@ -19,6 +19,7 @@ urlpatterns = [
     path('workout/<int:pk>/', views.workout_detail, name='workout_detail'),
     path('workout/<int:pk>/edit/', views.workout_update, name='workout_update'),
     path('workout/<int:pk>/delete/', views.workout_delete, name='workout_delete'),
+    path('api/exercises-by-type/', views.get_exercises_by_type, name='get_exercises_by_type'),
 
     # --- Nutrition ---
     path('nutrition/', views.diet_list, name='diet_list'),

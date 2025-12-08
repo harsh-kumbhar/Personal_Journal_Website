@@ -48,14 +48,16 @@ class Muscle(models.Model):
         return self.name
 
 
+
+
 class WorkoutType(models.Model):
-    """
-    Lookup table for workout categories (Chest, Back, Cardio, etc).
-    Parent allows hierarchical categories (optional).
-    """
     name = models.CharField(max_length=120, unique=True)
     description = models.TextField(blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
+    
+    # --- NEW FIELD ---
+    targeted_muscles = models.ManyToManyField('Muscle', blank=True, related_name='workout_types')
+    
     created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -64,7 +66,6 @@ class WorkoutType(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Exercise(models.Model):
     name = models.CharField(max_length=200, unique=True)

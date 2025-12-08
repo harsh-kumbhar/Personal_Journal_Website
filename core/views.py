@@ -701,3 +701,40 @@ def internship_log_delete(request, pk):
     return render(request, 'core/generic_confirm_delete.html', {
         'object': obj, 'type_name': 'Internship Log'
     })
+
+# core/views.py
+from django.http import JsonResponse
+from .models import Exercise, WorkoutType
+
+# ... existing views ...
+
+@login_required
+def get_exercises_by_type(request):
+    """
+    API endpoint: Returns a list of exercises based on the selected WorkoutType ID.
+    Logic: Type -> Targeted Muscles -> Exercises with those primary muscles.
+    """
+    type_id = request.GET.get('type_id')
+    
+    if type_id:
+        try:
+            workout_type = WorkoutType.objects.get(pk=type_id)
+            # 1. Get all muscles linked to this workout type
+            target_muscles = workout_type.targeted_muscles.all()
+            
+            if target_muscles.exists():
+                # 2. Filter exercises that hit these muscles
+                exercises = Exercise.objects.filter(primary_muscle__in=target_muscles).order_by('name')
+            else:
+                # If no muscles linked (e.g. "General"), show ALL exercises
+                exercises = Exercise.objects.all().order_by('name')
+                
+        except WorkoutType.DoesNotExist:
+            exercises = Exercise.objects.none()
+    else:
+        # No type selected? Return all or none. Let's return all for flexibility.
+        exercises = Exercise.objects.all().order_by('name')
+    
+    # Return as JSON list for the frontend
+    data = list(exercises.values('name'))
+    return JsonResponse({'exercises': data})
