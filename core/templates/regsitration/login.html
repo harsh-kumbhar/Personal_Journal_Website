@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* --- AUTH CARD STYLING --- */
+    body {
+        /* Center the login card vertically */
+        display: flex;
+        align-items: center;
+        min-height: 100vh; 
+        flex-direction: column;
+    }
+    
+    .main-content {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding-top: 0 !important; /* Override base padding for centering */
+    }
+
+    .auth-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        max-width: 400px;
+        width: 100%;
+        padding: 2.5rem;
+    }
+
+    /* Force Inputs to Dark Mode */
+    .form-control {
+        background-color: #222 !important;
+        border: 1px solid #444 !important;
+        color: #F5E8D8 !important;
+        padding: 0.8rem;
+    }
+    .form-control:focus {
+        border-color: var(--accent-golden) !important;
+        box-shadow: 0 0 0 0.2rem rgba(218, 165, 32, 0.25) !important;
+    }
+
+    /* Labels */
+    label {
+        color: #B8A898 !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    /* Button */
+    .btn-login {
+        background: var(--accent-coral);
+        color: #fff !important;
+        font-weight: bold;
+        letter-spacing: 1px;
+        width: 100%;
+        padding: 0.8rem;
+        border-radius: 8px;
+        transition: transform 0.2s;
+        border: none;
+    }
+    .btn-login:hover {
+        transform: translateY(-2px);
+        background: #ff8a7d; /* Slightly lighter coral */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <h1 class="mb-1" style="font-family: 'Bebas Neue'; color: var(--accent-golden) !important; letter-spacing: 2px;">
+            Welcome Back
+        </h1>
+        <p class="text-muted small">Access your personal journal</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div class="alert alert-danger small p-2 mb-3 text-center" style="background: rgba(255,0,0,0.1); border: 1px solid red; color: #ff9999;">
+                Invalid username or password.
+            </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label for="id_username">Username</label>
+            <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control">
+        </div>
+
+        <div class="mb-4">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-login">
+            LOGIN
+        </button>
+        
+        <div class="text-center mt-3">
+             <a href="/" class="small text-decoration-none text-muted">Return to Home</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
