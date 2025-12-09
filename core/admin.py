@@ -108,3 +108,13 @@ admin.site.register(models.Notification)
 admin.site.register(models.UserSettings)
 admin.site.register(models.WeeklySummary)
 admin.site.register(models.ExerciseProgress)
+
+
+
+from .models import BadHabit # <--- Make sure it is imported
+
+
+@admin.register(BadHabit)
+class BadHabitAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'active')
+    list_filter = ('active', 'user')
